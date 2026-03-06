@@ -1,3 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Wavora</string>
+    <string name="app_tagline">Where Every Wave Tells a Story</string>
+
+    <!-- Library -->
+    <string name="tab_songs">Songs</string>
+    <string name="tab_albums">Albums</string>
+    <string name="tab_artists">Artists</string>
+    <string name="tab_folders">Folders</string>
+    <string name="tab_playlists">Playlists</string>
+
+    <!-- Empty states -->
+    <string name="empty_songs_title">No songs yet</string>
+    <string name="empty_songs_subtitle">Your music will appear here after the library scans your device.</string>
+    <string name="empty_playlists_title">No playlists</string>
+    <string name="empty_playlists_subtitle">Tap + to create your first playlist.</string>
+    <string name="empty_search_title">Search your library</string>
+    <string name="empty_search_subtitle">Find songs, albums, and artists</string>
+
+    <!-- Permission -->
+    <string name="permission_required_title">Permission needed</string>
+    <string name="permission_required_subtitle">WAVORA needs access to your audio files to build your library. Your music never leaves your device.</string>
+    <string name="permission_grant_button">Grant Permission</string>
+
+    <!-- Player -->
+    <string name="now_playing">NOW PLAYING</string>
+    <string name="no_song_playing">No song playing</string>
+    <string name="action_play">Play</string>
+    <string name="action_pause">Pause</string>
+    <string name="action_skip_next">Skip next</string>
+    <string name="action_skip_previous">Skip previous</string>
+    <string name="action_shuffle">Shuffle</string>
+    <string name="action_repeat">Repeat</string>
+    <string name="action_favourite">Favourite</string>
+    <string name="action_lyrics">Lyrics</string>
+    <string name="action_timer">Timer</string>
+    <string name="action_queue">Queue</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">Music Playback</string>
+    <string name="notification_channel_description">Controls for WAVORA music playback</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_dark_theme">Dark theme</string>
+    <string name="settings_dynamic_color">Material You (Dynamic color)</string>
+    <string name="settings_playback">Playback</string>
+    <string name="settings_gapless">Gapless playback</string>
+    <string name="settings_equalizer">Equalizer</string>
+    <string name="settings_library">Library</string>
+    <string name="settings_music_folders">Music folders</string>
+    <string name="settings_version">Version</string>
+
+    <!-- Errors -->
+    <string name="error_permission_denied">Storage permission is required to show your music.</string>
+    <string name="error_playback_failed">Could not play this track. The file may be missing or corrupt.</string>
 </resources>

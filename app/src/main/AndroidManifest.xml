@@ -1,6 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <!-- Audio file access: Android 13+ uses granular READ_MEDIA_AUDIO -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+
+    <!-- Fallback for Android ≤ 12 -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
+    <!-- Required for ForegroundService (background music playback) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+
+    <!-- Wake lock — held ONLY during active playback decode -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Receive broadcast when a headset is unplugged (BECOME_NOISY) -->
+    <uses-permission android:name="android.permission.BROADCAST_STICKY" />
+
+    <!-- Receive system boot broadcast to restore playback state if desired -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- NO INTERNET permission — WAVORA is proudly offline-first -->
 
     <application
         android:allowBackup="true"
@@ -10,10 +32,12 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Wavora">
+        android:theme="@style/Theme.Wavora"
+        tools:targetApi="31">
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:label="@string/app_name"
             android:theme="@style/Theme.Wavora">
             <intent-filter>

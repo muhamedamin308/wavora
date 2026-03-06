@@ -1,3 +1,4 @@
+# ── Android ───────────────────────────────────────────────────────────────────
 *.iml
 .gradle
 /local.properties
@@ -13,3 +14,26 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# ── Generated ─────────────────────────────────────────────────────────────────
+app/build/
+build/
+
+# ── APKs / Keystores ──────────────────────────────────────────────────────────
+*.apk
+*.aar
+*.ap_
+*.aab
+*.jks
+*.keystore
+keystore.properties
+
+# ── Room schemas — KEEP in git for migration history ─────────────────────────
+# app/schemas/  ← do NOT gitignore
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Kotlin ────────────────────────────────────────────────────────────────────
+*.class
