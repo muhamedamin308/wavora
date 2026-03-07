@@ -22,11 +22,7 @@ android {
             useSupportLibrary = true
         }
 
-        // Room schema export directory for migration tracking
-        ksp {
-            arg("room.schemaLocation", "$projectDir/schemas")
-            arg("room.incremental", "true")
-        }
+
     }
 
     buildTypes {
@@ -34,12 +30,20 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             isDebuggable = true
-            // StrictMode violations will crash debug builds — keeps code honest
+            // Explicitly disable shrinking for debug to ensure fast builds
+            isMinifyEnabled = false
+            isShrinkResources = false
             buildConfigField("boolean", "ENABLE_STRICT_MODE", "true")
         }
         release {
+            // Option 1: To just get it working for Phase 1
             isMinifyEnabled = false
-            isShrinkResources = true
+            isShrinkResources = false
+
+            // Option 2: If you want to prepare for Phase 8 (Production-Ready)
+            // isMinifyEnabled = true
+            // isShrinkResources = true
+
             buildConfigField("boolean", "ENABLE_STRICT_MODE", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -136,6 +140,12 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.compose.ui.test.junit4)
     debugImplementation(libs.compose.ui.test.manifest)
+}
+
+// Room schema export directory for migration tracking
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.incremental", "true")
 }
 
 // Allow references to generated code

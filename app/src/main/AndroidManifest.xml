@@ -25,6 +25,7 @@
     <!-- NO INTERNET permission — WAVORA is proudly offline-first -->
 
     <application
+        android:name=".WavoraApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -38,14 +39,57 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.Wavora">
+            android:theme="@style/Theme.Wavora.Splash"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Handle media button events (headset controls) -->
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
         </activity>
+
+        <!-- ── Playback Service (Phase 3) ───────────────────────────────── -->
+        <!--
+            WavoraPlaybackService will be added in Phase 3.
+            Declared here as a placeholder comment so the manifest is ready.
+
+        <service
+            android:name=".player.service.WavoraPlaybackService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback"
+            android:stopWithTask="false">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+            </intent-filter>
+        </service>
+        -->
+
+        <!-- ── Media Button Receiver ────────────────────────────────────── -->
+        <!--
+            Will be added in Phase 3 alongside MediaSession setup.
+
+        <receiver android:name="androidx.media.session.MediaButtonReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+        -->
+
+        <!-- ── File Provider (for sharing/artwork) ──────────────────────── -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
     </application>
 
 </manifest>
