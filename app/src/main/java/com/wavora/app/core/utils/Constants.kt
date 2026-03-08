@@ -59,4 +59,6 @@ object Constants {
     // Smart Playlists
     const val SMART_PLAYLIST_LIMIT = 50
 
+    // Transition timing constant
+    const val NAV_ANIM_DURATION = 300
 }

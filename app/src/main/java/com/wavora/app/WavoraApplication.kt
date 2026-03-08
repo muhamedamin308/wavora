@@ -23,7 +23,6 @@ class WavoraApplication : Application() {
             StrictMode.ThreadPolicy.Builder()
                 .detectAll()
                 .penaltyLog()
-                .penaltyDeath() // Crash on violation is debug
                 .build()
         )
 
@@ -42,7 +41,6 @@ class WavoraApplication : Application() {
                 .detectActivityLeaks()
                 .detectLeakedRegistrationObjects()
                 .penaltyLog()
-                .penaltyDeath()
                 .build()
         )
     }

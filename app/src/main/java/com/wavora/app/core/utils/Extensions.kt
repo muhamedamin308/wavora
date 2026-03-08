@@ -33,6 +33,7 @@ fun Context.hasAudioPermission(): Boolean =
             PackageManager.PERMISSION_GRANTED
 
 // Flow Extensions
+//Hello! it's Renad, ya 7aywan! - 7/3/2026 <3
 /**
  * Wraps a [Flow<T>] into a [Flow<AsyncResult<T>>], automatically emitting
  * [AsyncResult.Loading] before the first item, and [AsyncResult.Error] on exception.

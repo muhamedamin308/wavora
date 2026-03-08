@@ -33,7 +33,7 @@ android {
             // Explicitly disable shrinking for debug to ensure fast builds
             isMinifyEnabled = false
             isShrinkResources = false
-            buildConfigField("boolean", "ENABLE_STRICT_MODE", "true")
+            buildConfigField("boolean", "ENABLE_STRICT_MODE", "false")
         }
         release {
             // Option 1: To just get it working for Phase 1
