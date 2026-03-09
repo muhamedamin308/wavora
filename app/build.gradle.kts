@@ -124,6 +124,11 @@ dependencies {
     // ── Coil Image Loading ────────────────────────────────────────────────────
     implementation(libs.coil.compose)
 
+    // ── WorkManager ──────────────────────────────────────────────────────────
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler) // Use ksp as per your setup
+
     // ── Coroutines ────────────────────────────────────────────────────────────
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
