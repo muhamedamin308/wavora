@@ -79,7 +79,7 @@ data class SongEntity(
  */
 
 @Fts4(contentEntity = SongEntity::class)
-@Entity
+@Entity(tableName = "songs_fts")
 data class SongFtsEntity(
     @ColumnInfo(name = "title") val title: String,
     @ColumnInfo(name = "artist_name") val artistName: String,
