@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 // PlaylistRepository — CRUD for user playlists
 interface PlaylistRepository {
 
-    fun getAllPlayLists(): Flow<List<Playlist>>
+    fun getAllPlaylists(): Flow<List<Playlist>>
 
     fun getPlaylistById(id: Long): Flow<Playlist?>
 

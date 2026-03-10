@@ -1,12 +1,12 @@
 package com.wavora.app.domain.repository.interfaces
 
-import android.app.appsearch.SearchResult
 import com.wavora.app.domain.model.Album
 import com.wavora.app.domain.model.Artist
 import com.wavora.app.domain.model.MusicFolder
 import com.wavora.app.domain.model.Song
 import com.wavora.app.domain.model.SortOrder
 import com.wavora.app.domain.repository.results.ScanResult
+import com.wavora.app.domain.repository.results.SearchResult
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -37,7 +37,7 @@ interface MusicRepository {
     fun getSongsForArtist(artistId: Long): Flow<List<Song>>
 
     // Unique folder paths derived from song file paths.
-    fun getFolders(): Flow<List<MusicFolder>>
+    fun getAllFolders(): Flow<List<MusicFolder>>
 
     // All songs within a specific folder path.
     fun getSongsForFolder(folderPath: String): Flow<List<Song>>

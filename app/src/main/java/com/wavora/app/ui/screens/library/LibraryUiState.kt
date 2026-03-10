@@ -26,6 +26,8 @@ data class LibraryUiState(
     val playlists: AsyncResult<List<Playlist>> = AsyncResult.Loading,
     val sortOrder: SortOrder = SortOrder.TITLE_ASC,
     val hasStoragePermission: Boolean = false,
+    val isScanning: Boolean = false,
+    val songCount: Int = 0,
 )
 
 enum class LibraryTab(val label: String) {

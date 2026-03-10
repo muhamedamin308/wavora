@@ -1,4 +1,4 @@
-package com.wavora.app.data.local.mediastore
+package com.wavora.app.data.mediastore
 
 import android.content.ContentUris
 import android.content.Context

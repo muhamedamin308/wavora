@@ -128,6 +128,7 @@ dependencies {
     implementation(libs.androidx.work.runtime)
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler) // Use ksp as per your setup
+    implementation(libs.androidx.startup)
 
     // ── Coroutines ────────────────────────────────────────────────────────────
     implementation(libs.coroutines.core)
