@@ -26,7 +26,7 @@ import android.util.Log
  * Design:
  *  - [AudioFocusRequest] used on API 26+ (our minSdk — always available).
  *  - [callbacks] is a simple interface so [WavoraPlaybackService] can react
- *    without AudioFocusManager knowing about ExoPlayer directly.
+ *    without [AudioFocusManager] knowing about ExoPlayer directly.
  *  - All callbacks fire on the AudioManager callback thread; callers must
  *    post to the player thread if needed.
  */

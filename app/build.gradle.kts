@@ -113,6 +113,7 @@ dependencies {
 
     // ── Media3 / ExoPlayer ────────────────────────────────────────────────────
     implementation(libs.bundles.media3)
+    implementation(libs.androidx.media)
 
     // ── Room Database ─────────────────────────────────────────────────────────
     implementation(libs.bundles.room)
