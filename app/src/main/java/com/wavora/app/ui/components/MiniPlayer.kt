@@ -75,8 +75,8 @@ fun MiniPlayer(
         MiniPlayerContent(
             playerState = state.playerState,
             onExpand = onExpand,
-            onPlayPause = viewModel::togglePlayPause,
-            onSkipNext = viewModel::skipToNext
+            onPlayPause = viewModel::onPlayPauseToggle,
+            onSkipNext = viewModel::onSkipToNext
         )
     }
 }

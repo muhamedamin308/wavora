@@ -2,7 +2,11 @@ package com.wavora.app
 
 import android.app.Application
 import android.os.StrictMode
+import android.util.Log
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 /**
  * @author Muhamed Amin Hassan on 07,March,2026
@@ -11,11 +15,26 @@ import dagger.hilt.android.HiltAndroidApp
  */
 
 @HiltAndroidApp
-class WavoraApplication : Application() {
+class WavoraApplication : Application(), Configuration.Provider {
+
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory = workerFactory)
+            .setMinimumLoggingLevel(
+                if (BuildConfig.ENABLE_STRICT_MODE) Log.DEBUG
+                else Log.ERROR
+            )
+            .build()
+
     override fun onCreate() {
         super.onCreate()
-
-        enableStrictMode()
+        if (BuildConfig.ENABLE_STRICT_MODE) {
+            enableStrictMode()
+        }
     }
 
     private fun enableStrictMode() {
@@ -26,14 +45,6 @@ class WavoraApplication : Application() {
                 .build()
         )
 
-        /**
-         * StrictMode catches common bugs during development:
-         *  - Disk reads / writes on the main thread (causes jank)
-         *  - Leaked Closeable objects (Cursors, SQLite, streams)
-         *  - Incorrect ViewModel usage
-         *
-         * Crashes in debug only; release builds are unaffected.
-         */
         StrictMode.setVmPolicy(
             StrictMode.VmPolicy.Builder()
                 .detectLeakedSqlLiteObjects()

@@ -132,7 +132,7 @@ fun NowPlayingScreen(
             // 4. Seek Bar
             SeekBarSection(
                 playerState = playerState,
-                onSeek = viewModel::seekTo
+                onSeek = viewModel::onSeekToMs
             )
 
             Spacer(modifier.height(16.dp))
@@ -140,11 +140,11 @@ fun NowPlayingScreen(
             // 5. Playback Control
             PlaybackControlsRow(
                 playerState = playerState,
-                onPlayPause = viewModel::togglePlayPause,
-                onSkipNext = viewModel::skipToNext,
-                onSkipPrev = viewModel::skipToPrevious,
-                onShuffle = viewModel::toggleShuffle,
-                onRepeat = viewModel::cycleRepeatMode,
+                onPlayPause = viewModel::onPlayPauseToggle,
+                onSkipNext = viewModel::onSkipToNext,
+                onSkipPrev = viewModel::onSkipToPrevious,
+                onShuffle = viewModel::onShuffleToggle,
+                onRepeat = viewModel::onRepeatModeToggle,
             )
 
             Spacer(modifier.height(24.dp))
@@ -152,7 +152,7 @@ fun NowPlayingScreen(
             // 6. Secondary actions
             SecondaryActionsRow(
                 isLyricsVisible = state.isLyricsVisible,
-                onLyricsToggle = viewModel::toggleLyrics,
+                onLyricsToggle = viewModel::onToggleLyrics,
                 onSleepTimer = { /* Phase 7 */ }
             )
         }

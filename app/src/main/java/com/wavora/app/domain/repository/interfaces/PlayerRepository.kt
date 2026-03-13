@@ -33,4 +33,9 @@ interface PlayerRepository {
     suspend fun removeFromQueue(index: Int)
     suspend fun moveQueueItem(fromIndex: Int, toIndex: Int)
     suspend fun clearQueue()
+    /**
+     * Set a sleep timer that pauses playback after [durationMs] milliseconds.
+     * Pass 0 to cancel an active timer.
+     */
+    suspend fun setSleepTimer(durationMs: Long)
 }

@@ -3,8 +3,7 @@ package com.wavora.app.di
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.preferencesDataStore
-import com.wavora.app.core.utils.Constants
+import com.wavora.app.core.utils.dataStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,11 +16,6 @@ import javax.inject.Singleton
  * @see <a href="https://github.com/muhamedamin308">Muhamed's Github</a>,
  * Egypt, Cairo.
  */
-
-// DataStore delegate — one instance per process
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
-    name = Constants.PREFS_NAME
-)
 
 /**
  * Application-scoped Hilt module.
