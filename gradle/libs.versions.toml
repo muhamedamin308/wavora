@@ -46,6 +46,7 @@ turbine = "1.0.0"
 arch-testing = "2.2.0"
 espresso = "3.5.1"
 compose-testing = "1.6.1"
+palette-ktx = "1.0.0"
 
 [libraries]
 # ── AndroidX Core ─────────────────────────────────────────────────────────────
@@ -113,6 +114,7 @@ arch-testing = { group = "androidx.arch.core", name = "core-testing", version.re
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
 compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4", version.ref = "compose-testing" }
 compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version.ref = "compose-testing" }
+androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "palette-ktx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

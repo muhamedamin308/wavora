@@ -32,6 +32,7 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.FolderOff
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
@@ -67,7 +68,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.wavora.app.core.result.AsyncResult
-import com.wavora.app.core.utils.Constants
 import com.wavora.app.core.utils.audioStoragePermission
 import com.wavora.app.core.utils.hasAudioPermission
 import com.wavora.app.core.utils.pluralLabel
@@ -82,23 +82,6 @@ import kotlinx.coroutines.launch
  * @author Muhamed Amin Hassan on 08,March,2026
  * @see <a href="https://github.com/muhamedamin308">Muhamed's Github</a>,
  * Egypt, Cairo.
- */
-
-/**
- * Main library screen — the app's home destination.
- *
- * Structure:
- *  ┌─────────────────────────────┐
- *  │   "WAVORA" TopAppBar        │
- *  ├─────────────────────────────┤
- *  │   TabRow (5 tabs)           │
- *  ├─────────────────────────────┤
- *  │   HorizontalPager           │
- *  │    └─ active tab content    │
- *  └─────────────────────────────┘
- *
- * Phase 1: Permission handling + empty states + tab navigation fully wired.
- * Phase 2: Tab content lists populated from real data.
  */
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -116,51 +99,47 @@ fun LibraryScreen(
     val scope = rememberCoroutineScope()
     val pagerState = rememberPagerState(
         initialPage = state.selectedTab.ordinal,
-        pageCount = { LibraryTab.entries.size }
+        pageCount = { LibraryTab.entries.size },
     )
 
-    // Permission Launcher
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (granted) viewModel.onPermissionGranted()
-        else viewModel.onPermissionDenied()
+        if (granted) viewModel.onPermissionGranted() else viewModel.onPermissionDenied()
     }
 
-    // check permission on first composition
     LaunchedEffect(Unit) {
-        if (context.hasAudioPermission())
-            viewModel.onPermissionGranted()
-        else
-            permissionLauncher.launch(audioStoragePermission())
+        if (context.hasAudioPermission()) viewModel.onPermissionGranted()
+        else permissionLauncher.launch(audioStoragePermission())
     }
 
-    // Sync Pager with viewModel tab selected
     LaunchedEffect(pagerState.currentPage) {
         viewModel.onTabSelected(LibraryTab.entries[pagerState.currentPage])
     }
 
-    // Consume one-shot events
-    val snackBarHostState = remember { SnackbarHostState() }
+    val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
+                is LibraryEvent.RequestPermission -> permissionLauncher.launch(
+                    audioStoragePermission()
+                )
+
+                is LibraryEvent.ShowError -> snackbarHostState.showSnackbar(event.message)
                 is LibraryEvent.NavigateToSong -> onNavigateToNowPlaying()
-                LibraryEvent.RequestPermission -> permissionLauncher.launch(audioStoragePermission())
-                is LibraryEvent.ShowError -> snackBarHostState.showSnackbar(event.message)
             }
         }
     }
 
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(snackBarHostState) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
                     Column {
                         Text(
-                            text = Constants.APP_NAME,
+                            text = "WAVORA",
                             style = MaterialTheme.typography.headlineMedium.copy(
                                 color = MaterialTheme.colorScheme.primary,
                             ),
@@ -199,12 +178,9 @@ fun LibraryScreen(
             )
         },
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-        ) {
-            // ── Tab row ───────────────────────────────────────────────────────
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .padding(innerPadding)) {
             ScrollableTabRow(
                 selectedTabIndex = pagerState.currentPage,
                 edgePadding = 16.dp,
@@ -213,26 +189,19 @@ fun LibraryScreen(
                     Tab(
                         selected = pagerState.currentPage == index,
                         onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                        text = {
-                            Text(
-                                text = tab.label,
-                                style = MaterialTheme.typography.labelLarge,
-                            )
-                        },
+                        text = { Text(tab.label, style = MaterialTheme.typography.labelLarge) },
                     )
                 }
             }
 
-            // ── Pager content ─────────────────────────────────────────────────
             if (!state.hasStoragePermission) {
-                PermissionRationale(
-                    onGrantClick = { permissionLauncher.launch(audioStoragePermission()) },
-                )
+                PermissionRationale(onGrantClick = {
+                    permissionLauncher.launch(
+                        audioStoragePermission()
+                    )
+                })
             } else {
-                HorizontalPager(
-                    state = pagerState,
-                    modifier = Modifier.fillMaxSize(),
-                ) { page ->
+                HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                     when (LibraryTab.entries[page]) {
                         LibraryTab.SONGS -> SongsTab(state, viewModel::onSongClicked)
                         LibraryTab.ALBUMS -> AlbumsTab(state, onNavigateToAlbum)
@@ -246,7 +215,8 @@ fun LibraryScreen(
     }
 }
 
-// Tab content composables  (populated with real data in Phase 2)
+// ── Songs ─────────────────────────────────────────────────────────────────────
+
 @Composable
 private fun SongsTab(state: LibraryUiState, onSongClick: (Song) -> Unit) {
     when (val result = state.songs) {
@@ -274,14 +244,15 @@ fun SongListItem(song: Song, onClick: () -> Unit, modifier: Modifier = Modifier)
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier = Modifier
                 .size(48.dp)
                 .clip(ShapeAlbumArt)
                 .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             if (song.albumArtUri != null) {
                 AsyncImage(
@@ -289,7 +260,7 @@ fun SongListItem(song: Song, onClick: () -> Unit, modifier: Modifier = Modifier)
                         .data(song.albumArtUri).size(96).crossfade(true).build(),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 )
             } else {
                 Icon(
@@ -299,9 +270,7 @@ fun SongListItem(song: Song, onClick: () -> Unit, modifier: Modifier = Modifier)
             }
         }
         Spacer(Modifier.width(12.dp))
-        Column(
-            Modifier.weight(1f)
-        ) {
+        Column(Modifier.weight(1f)) {
             Text(
                 song.title, style = MaterialTheme.typography.titleSmall,
                 maxLines = 1, overflow = TextOverflow.Ellipsis
@@ -319,6 +288,8 @@ fun SongListItem(song: Song, onClick: () -> Unit, modifier: Modifier = Modifier)
         )
     }
 }
+
+// ── Albums ────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun AlbumsTab(state: LibraryUiState, onAlbumClick: (Long) -> Unit) {
@@ -390,6 +361,8 @@ private fun AlbumsTab(state: LibraryUiState, onAlbumClick: (Long) -> Unit) {
     }
 }
 
+// ── Artists ───────────────────────────────────────────────────────────────────
+
 @Composable
 private fun ArtistsTab(state: LibraryUiState, onArtistClick: (Long) -> Unit) {
     when (val result = state.artists) {
@@ -407,15 +380,11 @@ private fun ArtistsTab(state: LibraryUiState, onArtistClick: (Long) -> Unit) {
         } else {
             LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
                 items(result.data, key = { it.id }) { artist ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                onArtistClick(artist.id)
-                            }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onArtistClick(artist.id) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             Modifier
                                 .size(48.dp)
@@ -439,7 +408,6 @@ private fun ArtistsTab(state: LibraryUiState, onArtistClick: (Long) -> Unit) {
                                 )
                             }
                         }
-
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(
@@ -468,6 +436,8 @@ private fun ArtistsTab(state: LibraryUiState, onArtistClick: (Long) -> Unit) {
     }
 }
 
+// ── Folders ───────────────────────────────────────────────────────────────────
+
 @Composable
 private fun FoldersTab(state: LibraryUiState) {
     when (val result = state.folders) {
@@ -485,13 +455,11 @@ private fun FoldersTab(state: LibraryUiState) {
         } else {
             LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
                 items(result.data, key = { it.path }) { folder ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Filled.Folder, null, Modifier.size(40.dp),
                             tint = MaterialTheme.colorScheme.primary
@@ -519,6 +487,8 @@ private fun FoldersTab(state: LibraryUiState) {
         }
     }
 }
+
+// ── Playlists ─────────────────────────────────────────────────────────────────
 
 @Composable
 private fun PlaylistsTab(state: LibraryUiState, onPlaylistClick: (Long) -> Unit) {
@@ -579,18 +549,14 @@ private fun PlaylistsTab(state: LibraryUiState, onPlaylistClick: (Long) -> Unit)
     }
 }
 
-// Permission rationale
+// ── Permission ────────────────────────────────────────────────────────────────
+
 @Composable
-private fun PermissionRationale(
-    onGrantClick: () -> Unit,
-) {
+private fun PermissionRationale(onGrantClick: () -> Unit) {
     EmptyState(
+        icon = Icons.Filled.FolderOff,
         title = "Permission needed",
         subtitle = "WAVORA needs access to your audio files to build your library. Your music never leaves your device.",
-        action = {
-            Button(onClick = onGrantClick) {
-                Text("Grant Permission")
-            }
-        },
+        action = { Button(onClick = onGrantClick) { Text("Grant Permission") } },
     )
 }

@@ -95,6 +95,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.splash.screen)
     implementation(libs.bundles.lifecycle)
+    implementation(libs.androidx.palette.ktx)
 
     // ── Compose BOM (pins ALL compose versions together) ─────────────────────
     val composeBom = platform(libs.compose.bom)

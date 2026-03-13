@@ -125,8 +125,10 @@ class WavoraPlaybackService : MediaSessionService() {
         restoreQueueFromDatabase()
     }
 
-    override fun onGetSession(p0: MediaSession.ControllerInfo?): MediaSession? =
-        mediaSession
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
+        Log.d(TAG, "Controller connected: ${controllerInfo.packageName}")
+        return mediaSession
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)

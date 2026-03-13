@@ -28,10 +28,10 @@ object PlayerConstants {
 
     // Buffer size
     //Minimum buffer while on battery - less RAM, faster seek start
-    const val BUFFER_MIN_MS_DEFAULT = 1_000
-    const val BUFFER_MAX_MS_DEFAULT = 8_000
-    const val BUFFER_FOR_PLAYBACK_MS = 800
-    const val BUFFER_FOR_REBUFFER_MS = 2_000
+    const val BUFFER_MIN_MS_DEFAULT = 2_000
+    const val BUFFER_MAX_MS_DEFAULT = 10_000
+    const val BUFFER_FOR_PLAYBACK_MS = 500
+    const val BUFFER_FOR_REBUFFER_MS = 1_500
 
     // ── Position tracking ─────────────────────────────────────────────────────
     /** How frequently the position StateFlow is updated during playback. */
@@ -42,5 +42,5 @@ object PlayerConstants {
     const val RESTART_THRESHOLD_MS = 3_000L
 
     // Sleep Timer
-    val SLEEP_TIMER_OPTIONS_MINUTES = listOf(5, 10, 15, 20, 30, 45, 60)
+    val SLEEP_TIMER_OPTIONS_MINUTES = listOf(5, 10, 15, 20, 30, 45, 60, 90, 120)
 }

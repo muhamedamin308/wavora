@@ -1,28 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
     <!-- Audio file access: Android 13+ uses granular READ_MEDIA_AUDIO -->
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-
-    <!-- Fallback for Android ≤ 12 -->
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-
-    <!-- Required for ForegroundService (background music playback) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-
-    <!-- Wake lock — held ONLY during active playback decode -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-
-    <!-- Receive broadcast when a headset is unplugged (BECOME_NOISY) -->
-    <uses-permission android:name="android.permission.BROADCAST_STICKY" />
-
-    <!-- Receive system boot broadcast to restore playback state if desired -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-
-    <!-- NO INTERNET permission — WAVORA is proudly offline-first -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".WavoraApplication"
@@ -52,35 +41,38 @@
             </intent-filter>
         </activity>
 
-        <!-- ── Playback Service (Phase 3) ───────────────────────────────── -->
         <!--
-            WavoraPlaybackService will be added in Phase 3.
-            Declared here as a placeholder comment so the manifest is ready.
+           WavoraPlaybackService: MediaSessionService for ExoPlayer + lock screen controls.
+           - foregroundServiceType: required on Android 10+ for media playback.
+           - exported="true": required so the system media session can bind to it
+             (e.g. for lock screen controls, Android Auto, assistant).
+       -->
 
         <service
             android:name=".player.service.WavoraPlaybackService"
             android:exported="true"
-            android:foregroundServiceType="mediaPlayback"
-            android:stopWithTask="false">
+            android:foregroundServiceType="mediaPlayback">
             <intent-filter>
                 <action android:name="androidx.media3.session.MediaSessionService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
-        -->
 
-        <!-- ── Media Button Receiver ────────────────────────────────────── -->
         <!--
-            Will be added in Phase 3 alongside MediaSession setup.
-
-        <receiver android:name="androidx.media.session.MediaButtonReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MEDIA_BUTTON" />
-            </intent-filter>
-        </receiver>
+            Disable WorkManager's auto-init so we can provide our own
+            Configuration (with HiltWorkerFactory) in WavoraApplication.
         -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
-        <!-- ── File Provider (for sharing/artwork) ──────────────────────── -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
@@ -90,6 +82,7 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_provider_paths" />
         </provider>
+
     </application>
 
 </manifest>
