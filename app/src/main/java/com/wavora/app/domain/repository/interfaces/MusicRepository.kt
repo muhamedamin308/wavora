@@ -24,11 +24,17 @@ interface MusicRepository {
     // All albums.
     fun getAllAlbums(): Flow<List<Album>>
 
+    // Get an album by ID
+    fun getAlbumById(albumId: Long): Flow<Album?>
+
     // All songs belonging to a specific album.
     fun getSongsForAlbum(albumId: Long): Flow<List<Song>>
 
     // All Artists
     fun getAllArtists(): Flow<List<Artist>>
+
+    // Get an artist by ID
+    fun getArtistById(artistId: Long): Flow<Artist?>
 
     // All albums for a specific artist.
     fun getAlbumsForArtist(artistId: Long): Flow<List<Album>>

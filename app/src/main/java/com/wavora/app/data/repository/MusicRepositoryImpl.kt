@@ -106,6 +106,10 @@ class MusicRepositoryImpl @Inject constructor(
             .map { entities -> entities.map { it.toDomain() } }
             .distinctUntilChanged()
 
+    override fun getAlbumById(albumId: Long): Flow<Album?> =
+        albumDao.getAlbumById(albumId)
+            .map { it?.toDomain() }
+
     override fun getSongsForAlbum(albumId: Long): Flow<List<Song>> =
         songDao.getSongsForAlbum(albumId)
             .map { it.map(SongEntity::toDomain) }
@@ -118,6 +122,10 @@ class MusicRepositoryImpl @Inject constructor(
         artistDao.getAllArtists()
             .map { entities -> entities.map { it.toDomain() } }
             .distinctUntilChanged()
+
+    override fun getArtistById(artistId: Long): Flow<Artist?> =
+        artistDao.getArtistById(artistId)
+            .map { it?.toDomain() }
 
     override fun getAlbumsForArtist(artistId: Long): Flow<List<Album>> =
         albumDao.getAlbumsForArtist(artistId)
