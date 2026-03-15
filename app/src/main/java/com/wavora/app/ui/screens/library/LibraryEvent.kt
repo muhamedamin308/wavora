@@ -10,7 +10,8 @@ import com.wavora.app.domain.model.Song
 
 /** One-shot events fired to the Library screen. */
 sealed interface LibraryEvent {
-    data object RequestPermission: LibraryEvent
-    data class ShowError(val message: String): LibraryEvent
-    data class NavigateToSong(val song: Song): LibraryEvent
+    data object RequestPermission : LibraryEvent
+    data class ShowError(val message: String) : LibraryEvent
+    data class NavigateToSong(val song: Song) : LibraryEvent
+    data class ShowSnackbar(val message: String) : LibraryEvent
 }

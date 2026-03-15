@@ -28,6 +28,7 @@ data class LibraryUiState(
     val hasStoragePermission: Boolean = false,
     val isScanning: Boolean = false,
     val songCount: Int = 0,
+    val addToPlaylistSong: Song? = null
 )
 
 enum class LibraryTab(val label: String) {

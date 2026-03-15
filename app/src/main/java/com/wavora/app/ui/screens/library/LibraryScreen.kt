@@ -5,6 +5,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,6 +74,7 @@ import com.wavora.app.core.utils.hasAudioPermission
 import com.wavora.app.core.utils.pluralLabel
 import com.wavora.app.core.utils.toDisplayDuration
 import com.wavora.app.domain.model.Song
+import com.wavora.app.ui.components.AddToPlaylistBottomSheet
 import com.wavora.app.ui.components.EmptyState
 import com.wavora.app.ui.components.LoadingScreen
 import com.wavora.app.ui.theme.ShapeAlbumArt
@@ -127,6 +129,7 @@ fun LibraryScreen(
 
                 is LibraryEvent.ShowError -> snackbarHostState.showSnackbar(event.message)
                 is LibraryEvent.NavigateToSong -> onNavigateToNowPlaying()
+                is LibraryEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
             }
         }
     }
@@ -178,9 +181,11 @@ fun LibraryScreen(
             )
         },
     ) { innerPadding ->
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
             ScrollableTabRow(
                 selectedTabIndex = pagerState.currentPage,
                 edgePadding = 16.dp,
@@ -203,7 +208,12 @@ fun LibraryScreen(
             } else {
                 HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
                     when (LibraryTab.entries[page]) {
-                        LibraryTab.SONGS -> SongsTab(state, viewModel::onSongClicked)
+                        LibraryTab.SONGS -> SongsTab(
+                            state,
+                            viewModel::onSongClicked,
+                            viewModel::onSongLongPressed
+                        )
+
                         LibraryTab.ALBUMS -> AlbumsTab(state, onNavigateToAlbum)
                         LibraryTab.ARTISTS -> ArtistsTab(state, onNavigateToArtist)
                         LibraryTab.FOLDERS -> FoldersTab(state)
@@ -213,12 +223,28 @@ fun LibraryScreen(
             }
         }
     }
+
+    // Add to playlist sheet
+    state.addToPlaylistSong?.let { song ->
+        val playlistList = (state.playlists as? AsyncResult.Success)?.data ?: emptyList()
+        AddToPlaylistBottomSheet(
+            songTitle = song.title,
+            playlists = playlistList,
+            onAddToPlaylist = viewModel::onAddSongToPlaylist,
+            onCreateAndAdd = viewModel::onCreatePlaylistAndAdd,
+            onDismiss = viewModel::onDismissAddToPlaylist
+        )
+    }
 }
 
 // ── Songs ─────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun SongsTab(state: LibraryUiState, onSongClick: (Song) -> Unit) {
+private fun SongsTab(
+    state: LibraryUiState,
+    onSongClick: (Song) -> Unit,
+    onSongLongPress: (Song) -> Unit = {},
+) {
     when (val result = state.songs) {
         is AsyncResult.Loading -> LoadingScreen()
         is AsyncResult.Error -> EmptyState(title = "Couldn't load songs", subtitle = result.message)
@@ -230,7 +256,11 @@ private fun SongsTab(state: LibraryUiState, onSongClick: (Song) -> Unit) {
         } else {
             LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
                 items(result.data, key = { it.id }) { song ->
-                    SongListItem(song = song, onClick = { onSongClick(song) })
+                    SongListItem(
+                        song = song,
+                        onClick = { onSongClick(song) },
+                        onLongClicked = { onSongLongPress(song) },
+                    )
                     HorizontalDivider(Modifier.padding(start = 72.dp))
                 }
             }
@@ -239,11 +269,19 @@ private fun SongsTab(state: LibraryUiState, onSongClick: (Song) -> Unit) {
 }
 
 @Composable
-fun SongListItem(song: Song, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun SongListItem(
+    song: Song,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onLongClicked: (() -> Unit)? = null,
+) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClicked
+            )
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -380,10 +418,11 @@ private fun ArtistsTab(state: LibraryUiState, onArtistClick: (Long) -> Unit) {
         } else {
             LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
                 items(result.data, key = { it.id }) { artist ->
-                    Row(modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onArtistClick(artist.id) }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onArtistClick(artist.id) }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             Modifier
@@ -455,10 +494,11 @@ private fun FoldersTab(state: LibraryUiState) {
         } else {
             LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
                 items(result.data, key = { it.path }) { folder ->
-                    Row(modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { }
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Filled.Folder, null, Modifier.size(40.dp),

@@ -79,6 +79,24 @@ class LibraryViewModel @Inject constructor(
 
     fun onRescanClicked() = triggerInitialScan()
 
+    fun onSongLongPressed(song: Song) = updateState { copy(addToPlaylistSong = song) }
+    fun onDismissAddToPlaylist() = updateState { copy(addToPlaylistSong = null) }
+
+    fun onAddSongToPlaylist(playlistId: Long) = safeLaunch {
+        val song = currentState.addToPlaylistSong ?: return@safeLaunch
+        playlistRepository.addSongToPlaylist(playlistId, song.id)
+        updateState { copy(addToPlaylistSong = null) }
+        emitEvent(LibraryEvent.ShowSnackbar("Added to playlist"))
+    }
+
+    fun onCreatePlaylistAndAdd(name: String) = safeLaunch {
+        val song = currentState.addToPlaylistSong ?: return@safeLaunch
+        val newId = playlistRepository.createPlaylist(name)
+        playlistRepository.addSongToPlaylist(newId, song.id)
+        updateState { copy(addToPlaylistSong = null) }
+        emitEvent(LibraryEvent.ShowSnackbar("Added to \"$name\""))
+    }
+
     private fun triggerInitialScan() {
         updateState { copy(isScanning = true) }
         LibraryScanWorker.enqueueOneTimeScan(workManager)

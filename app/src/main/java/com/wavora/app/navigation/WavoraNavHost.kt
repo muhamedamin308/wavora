@@ -30,6 +30,7 @@ import com.wavora.app.ui.components.WavoraBottomNav
 import com.wavora.app.ui.screens.library.LibraryScreen
 import com.wavora.app.ui.screens.player.NowPlayingScreen
 import com.wavora.app.ui.screens.playlist.PlaylistScreen
+import com.wavora.app.ui.screens.queue.QueueScreen
 import com.wavora.app.ui.screens.search.SearchScreen
 import com.wavora.app.ui.screens.settings.SettingsScreen
 
@@ -64,7 +65,10 @@ fun WavoraNavHost() {
     } ?: true
 
     // Hide mini player on the full Now Playing screen
-    val showMiniPlayer = currentDestination?.route != WavoraRoutes.NowPlaying.route && isTopLevel
+    val showMiniPlayer = currentDestination?.route !in listOf(
+        WavoraRoutes.NowPlaying.route,
+        WavoraRoutes.PlaybackQueue.route,
+    )
 
     Scaffold(
         bottomBar = {
@@ -87,8 +91,8 @@ fun WavoraNavHost() {
     ) { innerPadding ->
         Box(
             modifier = Modifier
+                .fillMaxSize()
                 .padding(innerPadding)
-                .fillMaxSize(),
         ) {
             NavHost(
                 navController = navController,
@@ -176,8 +180,7 @@ fun WavoraNavHost() {
                 }
 
                 composable(WavoraRoutes.PlaybackQueue.route) {
-                    // QueueScreen added in Phase 4
-                    PlaceholderScreen("Queue")
+                    QueueScreen(onNavigateUp = { navController.navigateUp() })
                 }
 
                 composable(WavoraRoutes.Equalizer.route) {
