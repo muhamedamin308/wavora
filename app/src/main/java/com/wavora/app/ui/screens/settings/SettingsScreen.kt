@@ -7,32 +7,40 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BlurCircular
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.Equalizer
-import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.outlined.BlurOff
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.Equalizer
+import androidx.compose.material.icons.outlined.FastForward
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.wavora.app.BuildConfig
 import com.wavora.app.ui.components.WavoraTopBar
 
 /**
@@ -48,6 +56,7 @@ fun SettingsScreen(
     onNavigateToEqualizer: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val prefs = state.prefs
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -57,36 +66,41 @@ fun SettingsScreen(
         }
     }
 
+    // dialog state for multi-options picker
+    var showSkipDurationPicker by remember { mutableStateOf(false) }
+    var showCrossfadePicker by remember { mutableStateOf(false) }
+
     Scaffold(
         modifier = modifier,
         topBar = {
             WavoraTopBar(title = "Settings")
         }
-    ) { padding ->
+    ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier.padding(padding),
-            contentPadding = PaddingValues(bottom = 32.dp),
+            contentPadding = PaddingValues(
+                top = innerPadding.calculateTopPadding(),
+                bottom = innerPadding.calculateBottomPadding() + 16.dp,
+            ),
         ) {
             // Appearance
             item { SettingsSectionHeader("Appearance") }
 
             item {
-                SettingsToggleRow(
-                    icon = Icons.Filled.DarkMode,
+                SwitchSettingRow(
+                    icon = Icons.Outlined.DarkMode,
                     title = "Dark theme",
-                    subtitle = "OLED-optimised true black",
-                    checked = state.isDarkTheme,
-                    onToggle = viewModel::onDarkThemeToggle,
+                    checked = prefs.isDarkTheme,
+                    onCheckedChange = viewModel::onDarkThemeToggle,
                 )
             }
 
             item {
-                SettingsToggleRow(
-                    icon = Icons.Filled.Palette,
-                    title = "Material You (Dynamic color)",
-                    subtitle = "Match album art & wallpaper colors",
-                    checked = state.useDynamicColor,
-                    onToggle = viewModel::onDynamicColorToggle,
+                SwitchSettingRow(
+                    icon = Icons.Outlined.Palette,
+                    title = "Dynamic colour",
+                    subtitle = "Use your wallpaper colours (Android 12+)",
+                    checked = prefs.useDynamicColors,
+                    onCheckedChange = viewModel::onDynamicColorToggle,
                 )
             }
 
@@ -94,33 +108,40 @@ fun SettingsScreen(
             item { SettingsSectionHeader("Playback") }
 
             item {
-                SettingsToggleRow(
-                    icon = Icons.Filled.BlurCircular,
+                SwitchSettingRow(
+                    icon = Icons.Outlined.BlurOff,
                     title = "Gapless playback",
                     subtitle = "Remove silence between tracks",
-                    checked = state.gaplessPlayback,
-                    onToggle = viewModel::onGaplessToggle,
+                    checked = prefs.gaplessPlayback,
+                    onCheckedChange = viewModel::onGaplessToggle,
                 )
             }
 
             item {
-                SettingsClickRow(
-                    icon = Icons.Filled.Equalizer,
+                ClickableSettingRow(
+                    icon = Icons.Outlined.FastForward,
+                    title = "Skip duration",
+                    subtitle = "${prefs.skipDurationSec}s per tap",
+                    onClick = { showSkipDurationPicker = true },
+                )
+            }
+
+            item {
+                ClickableSettingRow(
+                    icon = Icons.Outlined.Tune,
+                    title = "Crossfade",
+                    subtitle = if (prefs.crossfadeDurationMs == 0) "Disabled"
+                    else "${prefs.crossfadeDurationMs / 1000}s",
+                    onClick = { showCrossfadePicker = true },
+                )
+            }
+
+            item {
+                ClickableSettingRow(
+                    icon = Icons.Outlined.Equalizer,
                     title = "Equalizer",
-                    subtitle = "Adjust bass, treble and audio presets",
+                    subtitle = "Phase 7",
                     onClick = viewModel::onEqualizerClick,
-                )
-            }
-
-            // Library
-            item { SettingsSectionHeader("Library") }
-
-            item {
-                SettingsClickRow(
-                    icon = Icons.Filled.FolderOpen,
-                    title = "Music folders",
-                    subtitle = state.libraryPath,
-                    onClick = { /* Phase 6: folder picker */ },
                 )
             }
 
@@ -128,12 +149,12 @@ fun SettingsScreen(
             item { SettingsSectionHeader("Lock Screen") }
 
             item {
-                SettingsToggleRow(
-                    icon = Icons.Filled.LockOpen,
-                    title = "Show album art on lock screen",
-                    subtitle = "Displays album art in media controls",
-                    checked = state.showAlbumArtOnLockScreen,
-                    onToggle = viewModel::onLockScreenArtToggle,
+                SwitchSettingRow(
+                    icon = Icons.Outlined.Lock,
+                    title = "Show album art",
+                    subtitle = "Display artwork on the lock screen",
+                    checked = prefs.showAlbumArtOnLockScreen,
+                    onCheckedChange = viewModel::onLockScreenArtToggle,
                 )
             }
 
@@ -141,13 +162,38 @@ fun SettingsScreen(
             item { SettingsSectionHeader("About") }
 
             item {
-                SettingsInfoRow(
-                    icon = Icons.Filled.Info,
+                ClickableSettingRow(
+                    icon = Icons.Outlined.Info,
                     title = "Version",
-                    value = state.appVersion,
+                    subtitle = BuildConfig.VERSION_NAME,
+                    onClick = {},
                 )
             }
         }
+    }
+
+    // ── Pickers ───────────────────────────────────────────────────────────────
+
+    if (showSkipDurationPicker) {
+        OptionPickerDialog(
+            title = "Skip duration",
+            options = listOf(5, 10, 15, 20, 30),
+            selected = prefs.skipDurationSec,
+            labelFor = { "${it}s" },
+            onSelect = { viewModel.onSkipDurationSelected(it); showSkipDurationPicker = false },
+            onDismiss = { showSkipDurationPicker = false },
+        )
+    }
+
+    if (showCrossfadePicker) {
+        OptionPickerDialog(
+            title = "Crossfade",
+            options = listOf(0, 1000, 2000, 3000, 5000),
+            selected = prefs.crossfadeDurationMs,
+            labelFor = { if (it == 0) "Disabled" else "${it / 1000}s" },
+            onSelect = { viewModel.onCrossfadeSelected(it); showCrossfadePicker = false },
+            onDismiss = { showCrossfadePicker = false },
+        )
     }
 }
 
@@ -155,44 +201,50 @@ fun SettingsScreen(
 @Composable
 private fun SettingsSectionHeader(title: String) {
     Text(
-        text = title.uppercase(),
-        modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp),
+        text = title,
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 16.dp, top = 20.dp, bottom = 4.dp),
     )
-    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 }
 
 @Composable
-fun SettingsToggleRow(
+fun SwitchSettingRow(
     icon: ImageVector,
     title: String,
-    subtitle: String,
     checked: Boolean,
-    onToggle: (Boolean) -> Unit,
+    onCheckedChange: (Boolean) -> Unit,
+    subtitle: String? = null,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+            .clickable { onCheckedChange(!checked) }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Icon(
+            icon, contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(24.dp)
+        )
         Spacer(Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
+        Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge)
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (subtitle != null) {
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
-        Switch(checked = checked, onCheckedChange = onToggle)
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
 @Composable
-private fun SettingsClickRow(
+private fun ClickableSettingRow(
     icon: ImageVector,
     title: String,
     subtitle: String,
@@ -202,12 +254,16 @@ private fun SettingsClickRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Icon(
+            icon, contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(24.dp)
+        )
         Spacer(Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
+        Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyLarge)
             Text(
                 subtitle,
@@ -216,32 +272,47 @@ private fun SettingsClickRow(
             )
         }
         Icon(
-            Icons.Filled.ChevronRight,
-            contentDescription = null,
+            Icons.Filled.ChevronRight, contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
 @Composable
-private fun SettingsInfoRow(
-    icon: ImageVector,
+private fun <T> OptionPickerDialog(
     title: String,
-    value: String,
+    options: List<T>,
+    selected: T,
+    labelFor: (T) -> String,
+    onSelect: (T) -> Unit,
+    onDismiss: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.width(16.dp))
-        Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = {
+            Column {
+                options.forEach { option ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(option) }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = option == selected,
+                            onClick = { onSelect(option) },
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(labelFor(option), style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
 }
