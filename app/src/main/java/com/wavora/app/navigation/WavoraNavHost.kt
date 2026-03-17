@@ -27,6 +27,9 @@ import com.wavora.app.core.utils.slideInFromBottom
 import com.wavora.app.core.utils.slideOutToBottom
 import com.wavora.app.ui.components.MiniPlayer
 import com.wavora.app.ui.components.WavoraBottomNav
+import com.wavora.app.ui.screens.album.AlbumDetailScreen
+import com.wavora.app.ui.screens.artist.ArtistDetailScreen
+import com.wavora.app.ui.screens.folder.FolderDetailScreen
 import com.wavora.app.ui.screens.library.LibraryScreen
 import com.wavora.app.ui.screens.player.NowPlayingScreen
 import com.wavora.app.ui.screens.playlist.PlaylistScreen
@@ -198,11 +201,17 @@ fun WavoraNavHost() {
                             type = NavType.LongType
                         }
                     )
-                ) { backStack ->
-                    val albumId =
-                        backStack.arguments?.getLong(WavoraRoutes.AlbumDetails.ARG_ALBUM_ID)
-                            ?: return@composable
-                    PlaceholderScreen("Album Details - id: $albumId")
+                ) {
+                    AlbumDetailScreen(
+                        onNavigateUp = { navController.navigateUp() },
+                        onNavigateToArtist = { id ->
+                            navController.navigate(
+                                WavoraRoutes.ArtistDetails.createRoute(
+                                    id
+                                )
+                            )
+                        }
+                    )
                 }
 
                 composable(
@@ -210,11 +219,19 @@ fun WavoraNavHost() {
                     arguments = listOf(navArgument(WavoraRoutes.ArtistDetails.ARG_ARTIST_ID) {
                         type = NavType.LongType
                     }),
-                ) { backStack ->
-                    val artistId =
-                        backStack.arguments?.getLong(WavoraRoutes.ArtistDetails.ARG_ARTIST_ID)
-                            ?: return@composable
-                    PlaceholderScreen("Artist Detail — id: $artistId")
+                ) {
+                    ArtistDetailScreen(
+                        onNavigateUp = {
+                            navController.navigateUp()
+                        },
+                        onNavigateToAlbum = { id ->
+                            navController.navigate(
+                                WavoraRoutes.AlbumDetails.createRoute(
+                                    id
+                                )
+                            )
+                        }
+                    )
                 }
 
                 composable(
@@ -241,7 +258,12 @@ fun WavoraNavHost() {
                     val path =
                         backStack.arguments?.getString(WavoraRoutes.FolderDetails.ARG_FOLDER_PATH)
                             ?: return@composable
-                    PlaceholderScreen("Folder: $path")
+                    FolderDetailScreen(
+                        folderPath = path,
+                        onNavigateUp = {
+                            navController.navigateUp()
+                        }
+                    )
                 }
             }
 
