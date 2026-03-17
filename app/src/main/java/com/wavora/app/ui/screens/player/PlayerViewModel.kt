@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.wavora.app.core.base.BaseViewModel
 import com.wavora.app.domain.model.RepeatMode
 import com.wavora.app.domain.model.Song
+import com.wavora.app.domain.repository.interfaces.MusicRepository
 import com.wavora.app.domain.repository.interfaces.PlayerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.launchIn
@@ -28,6 +29,7 @@ import javax.inject.Inject
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     private val playerRepository: PlayerRepository,
+    private val musicRepository: MusicRepository,
 ) : BaseViewModel<PlayerUiState, PlayerEvent>(PlayerUiState()) {
 
     init {
@@ -101,4 +103,28 @@ class PlayerViewModel @Inject constructor(
 
     fun onDominantColorExtracted(argb: Long) =
         updateState { copy(dominantColor = argb) }
+
+    fun onToggleFavorites() {
+        val songId = currentState.playerState.currentSong?.id ?: return
+        safeLaunch { musicRepository.toggleFavourite(songId) }
+    }
+
+    fun onShowSleepTimerSheet() = updateState {
+        copy(isSleepTimerSheetVisible = true)
+    }
+
+    fun onDismissSleepTimerSheet() = updateState {
+        copy(isSleepTimerSheetVisible = false)
+    }
+
+    fun onSetSleepTimer(minutes: Int) {
+        safeLaunch { playerRepository.setSleepTimer(minutes * 60 * 1000L) }
+        updateState { copy(isSleepTimerSheetVisible = false) }
+    }
+
+    fun onCancelSleepTimer() {
+        safeLaunch { playerRepository.setSleepTimer(0L) }
+        updateState { copy(isSleepTimerSheetVisible = false) }
+    }
+
 }

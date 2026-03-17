@@ -73,5 +73,4 @@ class QueueViewModel @Inject constructor(
         safeLaunch { playerRepository.moveQueueItem(from, to) }
     }
 
-
 }

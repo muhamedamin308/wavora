@@ -12,4 +12,5 @@ data class PlayerUiState(
     val playerState: PlayerState = PlayerState.Empty,
     val isLyricsVisible: Boolean = false,
     val dominantColor: Long = 0L, // ARGB from album art — drives dynamic theming
+    val isSleepTimerSheetVisible: Boolean = false,
 )

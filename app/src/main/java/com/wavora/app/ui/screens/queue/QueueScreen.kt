@@ -2,6 +2,7 @@ package com.wavora.app.ui.screens.queue
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,11 +31,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wavora.app.core.utils.toDisplayDuration
@@ -79,6 +87,10 @@ fun QueueScreen(
                     }
                 })
         }) { innerPadding ->
+        var draggedIndex by remember { mutableIntStateOf(-1) }
+        var dragOffsetY by remember { mutableFloatStateOf(0f) }
+        val itemHeightPx = with(LocalDensity.current) { 68.dp.toPx() }
+
         if (state.queue.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -120,6 +132,35 @@ fun QueueScreen(
                         position = index + 1,
                         onClick = { viewModel.onSongClicked(index) },
                         onRemove = { viewModel.onRemoveFromQueue(index) },
+                        dragModifier = Modifier.pointerInput(index) {
+                            detectDragGesturesAfterLongPress(
+                                onDragStart = {
+                                    draggedIndex = index
+                                    dragOffsetY = 0f
+                                },
+                                onDrag = { change, dragAmount ->
+                                    change.consume()
+                                    dragOffsetY += dragAmount.y
+                                    val targetIndex =
+                                        (draggedIndex + (dragOffsetY / itemHeightPx).toInt())
+                                            .coerceIn(0, state.queue.lastIndex)
+
+                                    if (targetIndex != draggedIndex) {
+                                        viewModel.onMoveItem(draggedIndex, targetIndex)
+                                        draggedIndex = targetIndex
+                                        dragOffsetY %= itemHeightPx
+                                    }
+                                },
+                                onDragEnd = {
+                                    draggedIndex = -1
+                                    dragOffsetY = 0f
+                                },
+                                onDragCancel = {
+                                    draggedIndex = -1
+                                    dragOffsetY = 0f
+                                }
+                            )
+                        }
                     )
                     HorizontalDivider(
                         Modifier.padding(start = 72.dp)
@@ -139,12 +180,16 @@ fun QueueItemComponent(
     onClick: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
+    isDragging: Boolean = false,
+    dragModifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .zIndex(if (isDragging) 1f else 0f)
             .background(
-                if (isCurrent) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+                if (isDragging) MaterialTheme.colorScheme.surfaceVariant
+                else if (isCurrent) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
                 else MaterialTheme.colorScheme.surface
             )
             .clickable(onClick = onClick)
@@ -156,18 +201,18 @@ fun QueueItemComponent(
             modifier = Modifier.size(36.dp),
             contentAlignment = Alignment.Center,
         ) {
-            if (isPlaying)
-                Icon(
-                    Icons.AutoMirrored.Filled.VolumeUp, null,
-                    Modifier.size(20.dp), tint = PlaybackAccent
-                )
-            else
-                Text(
-                    text = "$position",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (isCurrent) PlaybackAccent
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            if (isPlaying) Icon(
+                Icons.AutoMirrored.Filled.VolumeUp,
+                null,
+                Modifier.size(20.dp),
+                tint = PlaybackAccent
+            )
+            else Text(
+                text = "$position",
+                style = MaterialTheme.typography.labelMedium,
+                color = if (isCurrent) PlaybackAccent
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
 
         // Song info
@@ -208,10 +253,11 @@ fun QueueItemComponent(
         // Drag handle (visual only — full drag-reorder requires reorderable-compose in Phase 5)
         Icon(
             Icons.Filled.DragHandle, "Drag to reorder",
-            Modifier
+            dragModifier
                 .size(20.dp)
                 .padding(end = 4.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            tint = if (isDragging) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
         )
     }
 }

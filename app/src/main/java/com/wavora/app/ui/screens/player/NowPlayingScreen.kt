@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -39,9 +39,12 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -69,6 +72,7 @@ import com.wavora.app.core.utils.toDisplayDuration
 import com.wavora.app.domain.model.PlayerState
 import com.wavora.app.domain.model.RepeatMode
 import com.wavora.app.domain.model.Song
+import com.wavora.app.ui.components.SleepTimerBottomSheet
 import com.wavora.app.ui.theme.ShapeAlbumArt
 
 /**
@@ -102,19 +106,23 @@ fun NowPlayingScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val playerState = state.playerState
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val backgroundColor by animateColorAsState(
-        targetValue = if (state.dominantColor != 0L) Color(state.dominantColor)
-        else MaterialTheme.colorScheme.background,
+        targetValue = if (state.dominantColor != 0L)
+            Color(state.dominantColor).copy(alpha = 0.6f)
+        else
+            MaterialTheme.colorScheme.background,
         animationSpec = tween(600),
-        label = "bgColor"
+        label = "bgColor",
     )
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is PlayerEvent.NavigateUp -> onNavigateUp()
-                is PlayerEvent.ShowError -> { /* Snackbar in Phase 5 */
+                is PlayerEvent.ShowError -> {
+                    snackbarHostState.showSnackbar(event.message)
                 }
             }
         }
@@ -136,8 +144,7 @@ fun NowPlayingScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
+                .systemBarsPadding()
                 .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -197,6 +204,24 @@ fun NowPlayingScreen(
             // ── Secondary controls ────────────────────────────────────────────
             SecondaryControlsSection(viewModel = viewModel)
         }
+
+        // Snackbar pinned to bottom of the Box
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = 16.dp),
+        )
+    }
+
+    if (state.isSleepTimerSheetVisible) {
+        SleepTimerBottomSheet(
+            onDismiss = viewModel::onDismissSleepTimerSheet,
+            remainingMs = playerState.sleepTimerRemainingMs,
+            onTimerSelected = viewModel::onSetSleepTimer,
+            onCancelTimer = viewModel::onCancelSleepTimer,
+        )
     }
 }
 
@@ -280,7 +305,7 @@ private fun SongInfoSection(
 
         // favorite button
         val isFavorite = playerState.currentSong?.isFavorite == true
-        IconButton(onClick = { /* Phase 5: toggle via MusicRepository */ }) {
+        IconButton(onClick = viewModel::onToggleFavorites) {
             Icon(
                 if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                 contentDescription = if (isFavorite) "Remove from favourites"
@@ -431,17 +456,25 @@ private fun MainControlsSection(
 private fun SecondaryControlsSection(viewModel: PlayerViewModel) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
+        horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
         TextButton(onClick = viewModel::onToggleLyrics) {
             Icon(Icons.Filled.Lyrics, null, Modifier.size(18.dp))
             Spacer(Modifier.width(4.dp))
             Text("Lyrics", style = MaterialTheme.typography.labelMedium)
         }
-        TextButton(onClick = { /* Phase 7: Sleep Timer */ }) {
-            Icon(Icons.Filled.Bedtime, null, Modifier.size(18.dp))
+        val timerActive =
+            viewModel.uiState.collectAsStateWithLifecycle().value.playerState.sleepTimerRemainingMs > 0
+        TextButton(onClick = viewModel::onShowSleepTimerSheet) {
+            Icon(
+                Icons.Filled.Bedtime, null, Modifier.size(18.dp),
+                tint = if (timerActive) MaterialTheme.colorScheme.primary else LocalContentColor.current,
+            )
             Spacer(Modifier.width(4.dp))
-            Text("Sleep Timer", style = MaterialTheme.typography.labelMedium)
+            Text(
+                "Sleep Timer", style = MaterialTheme.typography.labelMedium,
+                color = if (timerActive) MaterialTheme.colorScheme.primary else LocalContentColor.current
+            )
         }
         TextButton(onClick = { /* Phase 7: Equalizer */ }) {
             Icon(Icons.Filled.Equalizer, null, Modifier.size(18.dp))
