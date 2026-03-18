@@ -54,6 +54,16 @@ interface MusicRepository {
     // Total number of songs in the library.
     fun getTotalSongCount(): Flow<Int>
 
+    // Smart playlists
+    /** Top [limit] songs ordered by play count descending. */
+    fun getMostPlayedSongs(limit: Int = 50): Flow<List<Song>>
+
+    /** Top [limit] songs ordered by last-played date descending (from play_history). */
+    fun getRecentlyPlayedSongs(limit: Int = 50): Flow<List<Song>>
+
+    /** Top [limit] songs ordered by date_added descending. */
+    fun getRecentlyAddedSongs(limit: Int = 50): Flow<List<Song>>
+
     // Favourites
     // All songs marked as favourite.
     fun getFavouriteSongs(): Flow<List<Song>>
@@ -69,4 +79,5 @@ interface MusicRepository {
      * @return Number of songs added / updated / removed.
      */
     suspend fun scanLibrary(): ScanResult
+
 }

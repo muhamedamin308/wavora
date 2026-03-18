@@ -45,7 +45,12 @@ sealed class WavoraRoutes(val route: String) {
 
     data object FolderDetails : WavoraRoutes("folder/{folderPath}") {
         const val ARG_FOLDER_PATH = "folderPath"
-        fun createRoute(encodedPath: Long) = "folder/$encodedPath"
+        fun createRoute(encodedPath: String) = "folder/$encodedPath"
+    }
+
+    data object SmartPlaylist : WavoraRoutes("smart_playlist/{smartPlaylistType}") {
+        const val ARG_TYPE = "smartPlaylistType"
+        fun createRoute(type: String) = "smart_playlist/$type"
     }
 }
 

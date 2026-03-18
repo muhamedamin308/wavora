@@ -36,6 +36,7 @@ import com.wavora.app.ui.screens.playlist.PlaylistScreen
 import com.wavora.app.ui.screens.queue.QueueScreen
 import com.wavora.app.ui.screens.search.SearchScreen
 import com.wavora.app.ui.screens.settings.SettingsScreen
+import com.wavora.app.ui.screens.smartplaylist.SmartPlaylistScreen
 
 /**
  * @author Muhamed Amin Hassan on 07,March,2026
@@ -132,7 +133,21 @@ fun WavoraNavHost() {
                                 )
                             )
                         },
-                        onNavigateToNowPlaying = { navController.navigate(WavoraRoutes.NowPlaying.route) }
+                        onNavigateToNowPlaying = { navController.navigate(WavoraRoutes.NowPlaying.route) },
+                        onNavigateToSmartPlaylist = { type ->
+                            navController.navigate(
+                                WavoraRoutes.SmartPlaylist.createRoute(
+                                    type
+                                )
+                            )
+                        },
+                        onNavigateToFolder = { path ->
+                            navController.navigate(
+                                WavoraRoutes.FolderDetails.createRoute(
+                                    path
+                                )
+                            )
+                        },
                     )
                 }
 
@@ -264,6 +279,17 @@ fun WavoraNavHost() {
                             navController.navigateUp()
                         }
                     )
+                }
+
+                composable(
+                    route = WavoraRoutes.SmartPlaylist.route,
+                    arguments = listOf(navArgument(WavoraRoutes.SmartPlaylist.ARG_TYPE) {
+                        type = NavType.StringType
+                    }),
+                ) {
+                    SmartPlaylistScreen(onNavigateUp = {
+                        navController.navigateUp()
+                    })
                 }
             }
 

@@ -93,11 +93,20 @@ class MusicRepositoryImpl @Inject constructor(
     override fun getFavouriteSongs(): Flow<List<Song>> =
         songDao.getFavoriteSongs().map { it.map(SongEntity::toDomain) }
 
-    override suspend fun toggleFavourite(songId: Long) {
-        withContext(Dispatchers.IO) {
-            songDao.toggleFavorite(songId)
-        }
-    }
+    override fun getMostPlayedSongs(limit: Int): Flow<List<Song>> =
+        songDao.getMostPlayedSongs(limit)
+            .map { it.map(SongEntity::toDomain) }
+
+    override fun getRecentlyPlayedSongs(limit: Int): Flow<List<Song>> =
+        playHistoryDao.getRecentlyPlayedSongs(limit)
+            .map { it.map(SongEntity::toDomain) }
+
+    override fun getRecentlyAddedSongs(limit: Int): Flow<List<Song>> =
+        songDao.getAllSongsByDateAddedDesc()
+            .map { it.take(limit).map(SongEntity::toDomain) }
+
+    override suspend fun toggleFavourite(songId: Long) =
+        withContext(Dispatchers.IO) { songDao.toggleFavorite(songId) }
 
     // Albums
 

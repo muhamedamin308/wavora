@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,6 +40,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -69,6 +71,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.wavora.app.core.result.AsyncResult
+import com.wavora.app.core.utils.Constants
 import com.wavora.app.core.utils.audioStoragePermission
 import com.wavora.app.core.utils.hasAudioPermission
 import com.wavora.app.core.utils.pluralLabel
@@ -77,6 +80,7 @@ import com.wavora.app.domain.model.Song
 import com.wavora.app.ui.components.AddToPlaylistBottomSheet
 import com.wavora.app.ui.components.EmptyState
 import com.wavora.app.ui.components.LoadingScreen
+import com.wavora.app.ui.screens.smartplaylist.SmartPlaylistType
 import com.wavora.app.ui.theme.ShapeAlbumArt
 import kotlinx.coroutines.launch
 
@@ -95,6 +99,8 @@ fun LibraryScreen(
     onNavigateToArtist: (Long) -> Unit,
     onNavigateToPlaylist: (Long) -> Unit,
     onNavigateToNowPlaying: () -> Unit,
+    onNavigateToSmartPlaylist: (String) -> Unit,
+    onNavigateToFolder: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -119,7 +125,7 @@ fun LibraryScreen(
         viewModel.onTabSelected(LibraryTab.entries[pagerState.currentPage])
     }
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
@@ -127,22 +133,22 @@ fun LibraryScreen(
                     audioStoragePermission()
                 )
 
-                is LibraryEvent.ShowError -> snackbarHostState.showSnackbar(event.message)
+                is LibraryEvent.ShowError -> snackBarHostState.showSnackbar(event.message)
                 is LibraryEvent.NavigateToSong -> onNavigateToNowPlaying()
-                is LibraryEvent.ShowSnackbar -> snackbarHostState.showSnackbar(event.message)
+                is LibraryEvent.ShowSnackbar -> snackBarHostState.showSnackbar(event.message)
             }
         }
     }
 
     Scaffold(
         modifier = modifier,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { SnackbarHost(snackBarHostState) },
         topBar = {
             TopAppBar(
                 title = {
                     Column {
                         Text(
-                            text = "WAVORA",
+                            text = Constants.APP_NAME,
                             style = MaterialTheme.typography.headlineMedium.copy(
                                 color = MaterialTheme.colorScheme.primary,
                             ),
@@ -216,8 +222,12 @@ fun LibraryScreen(
 
                         LibraryTab.ALBUMS -> AlbumsTab(state, onNavigateToAlbum)
                         LibraryTab.ARTISTS -> ArtistsTab(state, onNavigateToArtist)
-                        LibraryTab.FOLDERS -> FoldersTab(state)
-                        LibraryTab.PLAYLISTS -> PlaylistsTab(state, onNavigateToPlaylist)
+                        LibraryTab.FOLDERS -> FoldersTab(state, onNavigateToFolder)
+                        LibraryTab.PLAYLISTS -> PlaylistsTab(
+                            state,
+                            onNavigateToPlaylist,
+                            onNavigateToSmartPlaylist
+                        )
                     }
                 }
             }
@@ -479,7 +489,7 @@ private fun ArtistsTab(state: LibraryUiState, onArtistClick: (Long) -> Unit) {
 // ── Folders ───────────────────────────────────────────────────────────────────
 
 @Composable
-private fun FoldersTab(state: LibraryUiState) {
+private fun FoldersTab(state: LibraryUiState, onFolderClick: (String) -> Unit = {}) {
     when (val result = state.folders) {
         is AsyncResult.Loading -> LoadingScreen()
         is AsyncResult.Error -> EmptyState(
@@ -498,7 +508,7 @@ private fun FoldersTab(state: LibraryUiState) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { }
+                            .clickable { onFolderClick(folder.path) }
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically) {
                         Icon(
@@ -532,60 +542,144 @@ private fun FoldersTab(state: LibraryUiState) {
 // ── Playlists ─────────────────────────────────────────────────────────────────
 
 @Composable
-private fun PlaylistsTab(state: LibraryUiState, onPlaylistClick: (Long) -> Unit) {
-    when (val result = state.playlists) {
-        is AsyncResult.Loading -> LoadingScreen()
-        is AsyncResult.Error -> EmptyState(
-            title = "Couldn't load playlists",
-            subtitle = result.message
-        )
+private fun PlaylistsTab(
+    state: LibraryUiState,
+    onPlaylistClick: (Long) -> Unit,
+    onSmartPlaylistClick: (String) -> Unit = {},
+) {
+    val playlists = (state.playlists as? AsyncResult.Success)?.data ?: emptyList()
 
-        is AsyncResult.Success -> if (result.data.isEmpty()) {
-            EmptyState(
-                icon = Icons.AutoMirrored.Filled.PlaylistAdd, title = "No playlists",
-                subtitle = "Create your first playlist to organise your music."
+    LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
+        // ── Smart playlists section ────────────────────────────────────────────
+        item(key = "smart_header") {
+            Text(
+                "Smart Playlists",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
             )
+        }
+        item(key = "smart_grid") {
+            SmartPlaylistGrid(onSmartPlaylistClick)
+        }
+
+        // ── User playlists section ─────────────────────────────────────────────
+        item(key = "user_header") {
+            Text(
+                "My Playlists",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp),
+            )
+        }
+
+        if (playlists.isEmpty()) {
+            item(key = "empty") {
+                EmptyState(
+                    modifier = Modifier.height(160.dp),
+                    icon = Icons.AutoMirrored.Filled.PlaylistAdd,
+                    title = "No playlists yet",
+                    subtitle = "Long-press any song to add it to a new playlist",
+                )
+            }
         } else {
-            LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
-                items(result.data, key = { it.id }) { playlist ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onPlaylistClick(playlist.id) }
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier
-                                .size(48.dp)
-                                .clip(ShapeAlbumArt)
-                                .background(MaterialTheme.colorScheme.tertiaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.QueueMusic, null, Modifier.size(24.dp),
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer
-                            )
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                playlist.name, style = MaterialTheme.typography.titleSmall,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                playlist.songCount.pluralLabel("song"),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+            items(playlists, key = { it.id }) { playlist ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onPlaylistClick(playlist.id) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        Modifier
+                            .size(48.dp)
+                            .clip(ShapeAlbumArt)
+                            .background(MaterialTheme.colorScheme.tertiaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
                         Icon(
-                            Icons.Filled.ChevronRight, null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            Icons.AutoMirrored.Filled.QueueMusic, null, Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.onTertiaryContainer
                         )
                     }
-                    HorizontalDivider(Modifier.padding(start = 72.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            playlist.name, style = MaterialTheme.typography.titleSmall,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            playlist.songCount.pluralLabel("song"),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Icon(
+                        Icons.Filled.ChevronRight, null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                HorizontalDivider(Modifier.padding(start = 72.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SmartPlaylistGrid(onSmartPlaylistClick: (String) -> Unit) {
+    // 2x2 grid of smart playlists
+    val items = SmartPlaylistType.entries
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items.chunked(2).forEach { rowItems ->
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                rowItems.forEach { type ->
+                    SmartPlaylistCard(
+                        type = type,
+                        onClick = { onSmartPlaylistClick(type.name) },
+                    )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SmartPlaylistCard(
+    type: SmartPlaylistType,
+    onClick: () -> Unit,
+) {
+    Card(
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+        ),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                type.icon, null,
+                Modifier.size(28.dp),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                type.displayName,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                maxLines = 1,
+            )
         }
     }
 }
