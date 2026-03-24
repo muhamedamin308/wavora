@@ -91,7 +91,6 @@ class WavoraPlaybackService : MediaSessionService() {
     private lateinit var mediaSession: MediaSession
     private lateinit var audioFocusManager: AudioFocusManager
 
-    // TODO: Implement [WavoraNotificationManager] class
     private lateinit var notificationManager: WavoraNotificationManager
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)

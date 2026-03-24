@@ -72,6 +72,7 @@ import com.wavora.app.core.utils.toDisplayDuration
 import com.wavora.app.domain.model.PlayerState
 import com.wavora.app.domain.model.RepeatMode
 import com.wavora.app.domain.model.Song
+import com.wavora.app.ui.components.LyricsPanel
 import com.wavora.app.ui.components.SleepTimerBottomSheet
 import com.wavora.app.ui.theme.ShapeAlbumArt
 
@@ -198,6 +199,16 @@ fun NowPlayingScreen(
 
             // ── Main controls ────────────────────────────────────────────────
             MainControlsSection(playerState = playerState, viewModel = viewModel)
+
+            // ── Lyrics panel ──────────────────────────────────────────────────
+            LyricsPanel(
+                isVisible = state.isLyricsVisible,
+                songTitle = playerState.currentSong?.title,
+                artistName = playerState.currentSong?.artistName,
+                lyrics = null,  // Phase 9: load from LRC file
+                currentLineIndex = -1,
+                positionMs = playerState.positionMs,
+            )
 
             Spacer(Modifier.height(24.dp))
 

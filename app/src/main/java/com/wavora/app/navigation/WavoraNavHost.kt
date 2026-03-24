@@ -29,6 +29,7 @@ import com.wavora.app.ui.components.MiniPlayer
 import com.wavora.app.ui.components.WavoraBottomNav
 import com.wavora.app.ui.screens.album.AlbumDetailScreen
 import com.wavora.app.ui.screens.artist.ArtistDetailScreen
+import com.wavora.app.ui.screens.equalizer.EqualizerScreen
 import com.wavora.app.ui.screens.folder.FolderDetailScreen
 import com.wavora.app.ui.screens.library.LibraryScreen
 import com.wavora.app.ui.screens.player.NowPlayingScreen
@@ -202,8 +203,7 @@ fun WavoraNavHost() {
                 }
 
                 composable(WavoraRoutes.Equalizer.route) {
-                    // EqualizerScreen added in Phase 7
-                    PlaceholderScreen("Equalizer")
+                    EqualizerScreen(onNavigateUp = { navController.navigateUp() })
                 }
 
                 // Details Destinations

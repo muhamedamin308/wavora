@@ -264,7 +264,10 @@ private fun SongsTab(
                 subtitle = "Your music will appear after the library scans your device."
             )
         } else {
-            LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 100.dp)
+            ) {
                 items(result.data, key = { it.id }) { song ->
                     SongListItem(
                         song = song,
@@ -356,6 +359,7 @@ private fun AlbumsTab(state: LibraryUiState, onAlbumClick: (Long) -> Unit) {
             )
         } else {
             LazyVerticalGrid(
+                modifier = Modifier.fillMaxSize(),
                 columns = GridCells.Fixed(2),
                 contentPadding = PaddingValues(12.dp, 12.dp, 12.dp, 100.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -427,7 +431,10 @@ private fun ArtistsTab(state: LibraryUiState, onArtistClick: (Long) -> Unit) {
                 subtitle = "Artists appear once your library is scanned."
             )
         } else {
-            LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 100.dp)
+            ) {
                 items(result.data, key = { it.id }) { artist ->
                     Row(
                         modifier = Modifier
@@ -503,7 +510,10 @@ private fun FoldersTab(state: LibraryUiState, onFolderClick: (String) -> Unit = 
                 subtitle = "Music folders appear once your library is scanned."
             )
         } else {
-            LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 100.dp)
+            ) {
                 items(result.data, key = { it.path }) { folder ->
                     Row(
                         modifier = Modifier
@@ -549,7 +559,10 @@ private fun PlaylistsTab(
 ) {
     val playlists = (state.playlists as? AsyncResult.Success)?.data ?: emptyList()
 
-    LazyColumn(contentPadding = PaddingValues(bottom = 100.dp)) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 100.dp)
+    ) {
         // ── Smart playlists section ────────────────────────────────────────────
         item(key = "smart_header") {
             Text(

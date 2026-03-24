@@ -56,7 +56,7 @@ fun SmartPlaylistScreen(
         modifier = modifier,
         topBar = {
             WavoraTopBar(
-                title = state.type.name,
+                title = state.type.displayName,
                 onNavigateUp = onNavigateUp
             )
         },

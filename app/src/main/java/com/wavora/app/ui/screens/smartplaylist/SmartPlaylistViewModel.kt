@@ -30,25 +30,20 @@ class SmartPlaylistViewModel @Inject constructor(
     )
 
     init {
-        updateState { copy(type = type) }
+        val playlistType = type
+        updateState { copy(type = playlistType) }
 
         val flow = when (type) {
-            SmartPlaylistType.RECENTLY_ADDED -> musicRepository.getRecentlyPlayedSongs()
+            SmartPlaylistType.RECENTLY_ADDED -> musicRepository.getRecentlyAddedSongs()
             SmartPlaylistType.MOST_PLAYED -> musicRepository.getMostPlayedSongs()
-            SmartPlaylistType.RECENTLY_PLAYED -> musicRepository.getRecentlyAddedSongs()
+            SmartPlaylistType.RECENTLY_PLAYED -> musicRepository.getRecentlyPlayedSongs()
             SmartPlaylistType.FAVOURITES -> musicRepository.getFavouriteSongs()
         }
 
         flow
             .onEach { songs -> updateState { copy(songs = AsyncResult.Success(songs)) } }
             .catch { exception ->
-                updateState {
-                    copy(
-                        songs = AsyncResult.Error(
-                            exception.message ?: "Error"
-                        )
-                    )
-                }
+                updateState { copy(songs = AsyncResult.Error(exception.message ?: "Error")) }
             }
             .launchIn(viewModelScope)
     }
