@@ -151,6 +151,9 @@ interface SongDao {
     @Query("UPDATE songs SET is_favorite = NOT is_favorite WHERE id = :id")
     suspend fun toggleFavorite(id: Long)
 
+    @Query("UPDATE songs SET is_favorite = :isFavorite WHERE id = :id")
+    suspend fun setFavorite(id: Long, isFavorite: Boolean)
+
     // Statistics
     @Query("SELECT COUNT(*) FROM songs $BASE_WHERE")
     fun getSongCount(): Flow<Int>

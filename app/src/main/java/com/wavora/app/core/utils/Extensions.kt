@@ -68,13 +68,14 @@ fun Int.pluralLabel(singular: String, plural: String = "${singular}s"): String =
 // String Extensions
 /** Returns the string truncated to [maxLength] characters, appending "…" if cut. */
 fun String.truncate(maxLength: Int): String =
-    if (length <= maxLength) this else "${take(maxLength - 1)}..."
+    if (length <= maxLength) this
+    else take(maxLength - 1) + "…"
 
 /** Returns the last path component of a file path string. */
 fun String.fileName() = substringAfterLast('/')
 
 /** Returns the parent directory of a file path string. */
-fun String.parentDirectory() = substringBeforeLast('/')
+fun String.parentDirectory() = substringBeforeLast('/', "")
 
 // DataStore delegate — one instance per process
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(

@@ -15,7 +15,7 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -30,21 +30,18 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
             isDebuggable = true
-            // Explicitly disable shrinking for debug to ensure fast builds
-            isMinifyEnabled = false
-            isShrinkResources = false
             buildConfigField("boolean", "ENABLE_STRICT_MODE", "true")
         }
         release {
             // Option 1: To just get it working for Phase 1
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
 
             // Option 2: If you want to prepare for Phase 8 (Production-Ready)
             // isMinifyEnabled = true
             // isShrinkResources = true
 
-            buildConfigField("boolean", "ENABLE_STRICT_MODE", "true")
+            buildConfigField("boolean", "ENABLE_STRICT_MODE", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -95,7 +92,9 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.splash.screen)
     implementation(libs.bundles.lifecycle)
-    implementation(libs.androidx.palette.ktx)
+
+    // ── Palette (dominant color extraction from album art) ────────────────────
+    implementation(libs.palette.lib)
 
     // ── Compose BOM (pins ALL compose versions together) ─────────────────────
     val composeBom = platform(libs.compose.bom)
@@ -129,7 +128,7 @@ dependencies {
     // ── WorkManager ──────────────────────────────────────────────────────────
     implementation(libs.androidx.work.runtime)
     implementation(libs.hilt.work)
-    ksp(libs.hilt.work.compiler) // Use ksp as per your setup
+    kapt(libs.hilt.work.compiler) // Use ksp as per your setup
     implementation(libs.androidx.startup)
 
     // ── Coroutines ────────────────────────────────────────────────────────────
@@ -147,6 +146,10 @@ dependencies {
     // ── Instrumented Tests ────────────────────────────────────────────────────
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.room.testing)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.ext.junit)
     debugImplementation(libs.compose.ui.test.manifest)
 }
 
