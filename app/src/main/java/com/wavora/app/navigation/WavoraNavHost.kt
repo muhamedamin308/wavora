@@ -31,7 +31,7 @@ import com.wavora.app.ui.screens.album.AlbumDetailScreen
 import com.wavora.app.ui.screens.artist.ArtistDetailScreen
 import com.wavora.app.ui.screens.equalizer.EqualizerScreen
 import com.wavora.app.ui.screens.folder.FolderDetailScreen
-import com.wavora.app.ui.screens.library.EnhancedLibraryScreen
+import com.wavora.app.ui.screens.library.LibraryScreen
 import com.wavora.app.ui.screens.player.EnhancedNowPlayingScreen
 import com.wavora.app.ui.screens.playlist.PlaylistScreen
 import com.wavora.app.ui.screens.queue.QueueScreen
@@ -112,7 +112,7 @@ fun WavoraNavHost() {
             ) {
                 // Top-Level Destinations
                 composable(WavoraRoutes.Library.route) {
-                    EnhancedLibraryScreen(
+                    LibraryScreen(
                         onNavigateToAlbum = { id ->
                             navController.navigate(
                                 WavoraRoutes.AlbumDetails.createRoute(
@@ -194,6 +194,9 @@ fun WavoraNavHost() {
                         },
                         onNavigateToQueue = {
                             navController.navigate(WavoraRoutes.PlaybackQueue.route)
+                        },
+                        onNavigateToEqualizer = {
+                            navController.navigate(WavoraRoutes.Equalizer.route)
                         }
                     )
                 }

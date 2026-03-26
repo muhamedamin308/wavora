@@ -32,12 +32,32 @@
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Handle media button events (headset controls) -->
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+
+            <!-- Deep link: open audio files from Files app / other apps -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:mimeType="audio/*"
+                    android:scheme="content" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:mimeType="audio/*"
+                    android:scheme="file" />
             </intent-filter>
         </activity>
 
@@ -47,7 +67,6 @@
            - exported="true": required so the system media session can bind to it
              (e.g. for lock screen controls, Android Auto, assistant).
        -->
-
         <service
             android:name=".player.service.WavoraPlaybackService"
             android:exported="true"
@@ -82,6 +101,7 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_provider_paths" />
         </provider>
+
 
     </application>
 

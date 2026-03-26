@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    WAVORA Adaptive Icon (API 26+)
+    References the foreground equalizer-wave and violet gradient background.
+    The system applies its own mask shape (circle, squircle, teardrop, etc.)
+    depending on the device launcher.
+-->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/ic_launcher_background" />
     <foreground android:drawable="@drawable/ic_launcher_foreground" />
+    <!-- monochrome layer for themed icons (Android 13+) -->
     <monochrome android:drawable="@drawable/ic_launcher_foreground" />
 </adaptive-icon>

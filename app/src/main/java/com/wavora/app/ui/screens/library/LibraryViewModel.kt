@@ -53,15 +53,6 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
     }
 
-    fun onTabSelected(tab: LibraryTab) {
-        updateState { copy(selectedTab = tab) }
-    }
-
-    fun onSortOrderChanged(sortOrder: SortOrder) {
-        updateState { copy(sortOrder = sortOrder) }
-        observeSongsWithCurrentSort()
-    }
-
     fun onPermissionGranted() {
         updateState { copy(hasStoragePermission = true) }
         triggerInitialScan()
@@ -73,11 +64,17 @@ class LibraryViewModel @Inject constructor(
         emitEvent(LibraryEvent.ShowError("Storage permission is required to show your music."))
     }
 
-    fun onSongClicked(song: Song) {
-        emitEvent(LibraryEvent.NavigateToSong(song))
+    fun onTabSelected(tab: LibraryTab) = updateState { copy(selectedTab = tab) }
+
+    fun onSortOrderChanged(sortOrder: SortOrder) {
+        updateState { copy(sortOrder = sortOrder) }
+        observeSongsWithCurrentSort()
     }
 
+    fun onSongClicked(song: Song) = emitEvent(LibraryEvent.NavigateToSong(song))
     fun onRescanClicked() = triggerInitialScan()
+
+    // ── Add to playlist ───────────────────────────────────────────────────────
 
     fun onSongLongPressed(song: Song) = updateState { copy(addToPlaylistSong = song) }
     fun onDismissAddToPlaylist() = updateState { copy(addToPlaylistSong = null) }
@@ -115,25 +112,8 @@ class LibraryViewModel @Inject constructor(
         musicRepository.getAllSongs(currentState.sortOrder)
             .map<List<Song>, AsyncResult<List<Song>>> { AsyncResult.Success(it) }
             .onStart { updateState { copy(songs = AsyncResult.Loading) } }
-            .catch { exception ->
-                updateState {
-                    copy(
-                        songs = AsyncResult.Error(
-                            exception.message ?: "Error"
-                        )
-                    )
-                }
-            }
+            .catch { e -> updateState { copy(songs = AsyncResult.Error(e.message ?: "Error")) } }
             .onEach { result -> updateState { copy(songs = result, isScanning = false) } }
-            .launchIn(viewModelScope)
-    }
-
-    private fun observeArtists() {
-        musicRepository.getAllArtists()
-            .map<List<Artist>, AsyncResult<List<Artist>>> { AsyncResult.Success(it) }
-            .onStart { updateState { copy(artists = AsyncResult.Loading) } }
-            .catch { e -> updateState { copy(artists = AsyncResult.Error(e.message ?: "Error")) } }
-            .onEach { result -> updateState { copy(artists = result) } }
             .launchIn(viewModelScope)
     }
 
@@ -143,6 +123,15 @@ class LibraryViewModel @Inject constructor(
             .onStart { updateState { copy(albums = AsyncResult.Loading) } }
             .catch { e -> updateState { copy(albums = AsyncResult.Error(e.message ?: "Error")) } }
             .onEach { result -> updateState { copy(albums = result) } }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeArtists() {
+        musicRepository.getAllArtists()
+            .map<List<Artist>, AsyncResult<List<Artist>>> { AsyncResult.Success(it) }
+            .onStart { updateState { copy(artists = AsyncResult.Loading) } }
+            .catch { e -> updateState { copy(artists = AsyncResult.Error(e.message ?: "Error")) } }
+            .onEach { result -> updateState { copy(artists = result) } }
             .launchIn(viewModelScope)
     }
 
