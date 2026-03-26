@@ -49,7 +49,7 @@ import com.wavora.app.ui.components.EmptyState
 import com.wavora.app.ui.components.LoadingScreen
 import com.wavora.app.ui.components.RenamePlaylistDialog
 import com.wavora.app.ui.components.WavoraTopBar
-import com.wavora.app.ui.screens.library.SongListItem
+import com.wavora.app.ui.screens.library.EnhancedSongListItem
 
 /**
  * @author Muhamed Amin Hassan on 08,March,2026
@@ -252,7 +252,7 @@ private fun PlaylistSongItem(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
     ) {
-        SongListItem(
+        EnhancedSongListItem(
             song = song,
             onClick = onClick,
             modifier = Modifier.weight(1f),

@@ -33,7 +33,7 @@ import com.wavora.app.core.utils.toDisplayDuration
 import com.wavora.app.ui.components.EmptyState
 import com.wavora.app.ui.components.LoadingScreen
 import com.wavora.app.ui.components.WavoraTopBar
-import com.wavora.app.ui.screens.library.SongListItem
+import com.wavora.app.ui.screens.library.EnhancedSongListItem
 
 /**
  * @author Muhamed Amin Hassan on 15,March,2026
@@ -102,7 +102,7 @@ fun FolderDetailScreen(
                         }
 
                         itemsIndexed(songs, key = { _, s -> s.id }) { index, song ->
-                            SongListItem(
+                            EnhancedSongListItem(
                                 song = song,
                                 onClick = { viewModel.onSongClicked(index) },
                             )

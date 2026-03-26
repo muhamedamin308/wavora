@@ -35,7 +35,7 @@ import com.wavora.app.domain.model.Song
 import com.wavora.app.ui.components.EmptyState
 import com.wavora.app.ui.components.LoadingScreen
 import com.wavora.app.ui.components.WavoraTopBar
-import com.wavora.app.ui.screens.library.SongListItem
+import com.wavora.app.ui.screens.library.EnhancedSongListItem
 
 /**
  * @author Muhamed Amin Hassan on 18,March,2026
@@ -184,7 +184,7 @@ fun SmartPlaylistSongRow(
                 .width(36.dp)
                 .padding(start = 16.dp),
         )
-        SongListItem(
+        EnhancedSongListItem(
             song = song,
             onClick = onClick,
             modifier = Modifier.weight(1f),

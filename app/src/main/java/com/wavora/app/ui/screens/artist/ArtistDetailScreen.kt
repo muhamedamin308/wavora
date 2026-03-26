@@ -54,7 +54,7 @@ import com.wavora.app.domain.model.Album
 import com.wavora.app.domain.model.Artist
 import com.wavora.app.ui.components.EmptyState
 import com.wavora.app.ui.components.LoadingScreen
-import com.wavora.app.ui.screens.library.SongListItem
+import com.wavora.app.ui.screens.library.EnhancedSongListItem
 import com.wavora.app.ui.theme.ShapeAlbumArt
 
 /**
@@ -131,7 +131,7 @@ fun ArtistDetailScreen(
                 }
 
                 itemsIndexed(songs, key = { _, s -> s.id }) { index, song ->
-                    SongListItem(
+                    EnhancedSongListItem(
                         song = song,
                         onClick = { viewModel.onSongClicked(index) },
                     )
