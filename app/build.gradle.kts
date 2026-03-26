@@ -33,7 +33,7 @@ android {
             // Explicitly disable shrinking for debug to ensure fast builds
             isMinifyEnabled = false
             isShrinkResources = false
-            buildConfigField("boolean", "ENABLE_STRICT_MODE", "false")
+            buildConfigField("boolean", "ENABLE_STRICT_MODE", "true")
         }
         release {
             // Option 1: To just get it working for Phase 1
@@ -44,7 +44,7 @@ android {
             // isMinifyEnabled = true
             // isShrinkResources = true
 
-            buildConfigField("boolean", "ENABLE_STRICT_MODE", "false")
+            buildConfigField("boolean", "ENABLE_STRICT_MODE", "true")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

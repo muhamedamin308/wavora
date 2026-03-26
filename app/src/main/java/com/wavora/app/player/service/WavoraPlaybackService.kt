@@ -2,9 +2,8 @@ package com.wavora.app.player.service
 
 import android.app.PendingIntent
 import android.content.Intent
-import android.net.Uri
 import android.util.Log
-import androidx.annotation.OptIn
+import androidx.core.net.toUri
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -15,16 +14,16 @@ import androidx.media3.common.Player.REPEAT_MODE_ALL
 import androidx.media3.common.Player.REPEAT_MODE_OFF
 import androidx.media3.common.Player.REPEAT_MODE_ONE
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.wavora.app.MainActivity
+import com.wavora.app.core.performance.BatteryAwareBufferConfig
 import com.wavora.app.data.local.dao.QueueDao
 import com.wavora.app.data.local.entity.QueueEntity
+import com.wavora.app.data.repository.MusicRepositoryImpl
 import com.wavora.app.domain.model.RepeatMode
 import com.wavora.app.domain.model.Song
-import com.wavora.app.domain.repository.interfaces.MusicRepository
 import com.wavora.app.player.PlayerConstants
 import com.wavora.app.player.notification.WavoraNotificationManager
 import com.wavora.app.player.queue.QueueManager
@@ -78,6 +77,10 @@ import javax.inject.Inject
 @UnstableApi
 @AndroidEntryPoint
 class WavoraPlaybackService : MediaSessionService() {
+
+    @Inject
+    lateinit var batteryAwareBufferConfig: BatteryAwareBufferConfig
+
     @Inject
     lateinit var queueManager: QueueManager
 
@@ -85,30 +88,23 @@ class WavoraPlaybackService : MediaSessionService() {
     lateinit var queueDao: QueueDao
 
     @Inject
-    lateinit var musicRepository: MusicRepository
+    lateinit var musicRepository: MusicRepositoryImpl
 
     private lateinit var player: ExoPlayer
     private lateinit var mediaSession: MediaSession
     private lateinit var audioFocusManager: AudioFocusManager
-
     private lateinit var notificationManager: WavoraNotificationManager
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var positionUpdateJob: Job? = null
     private var sleepTimerJob: Job? = null
 
-    // public state read by playerRepositoryImpl via binder
+    // Public state read by PlayerRepositoryImpl via binder
     val playerStateFlow: MutableStateFlow<ServicePlayerState> =
         MutableStateFlow(ServicePlayerState())
 
-    companion object {
-        private const val TAG = "WavoraPlaybackService"
-    }
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-
-    // Lifecycle
-
-    @OptIn(UnstableApi::class)
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "Service created")
@@ -124,10 +120,8 @@ class WavoraPlaybackService : MediaSessionService() {
         restoreQueueFromDatabase()
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? {
-        Log.d(TAG, "Controller connected: ${controllerInfo.packageName}")
-        return mediaSession
-    }
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession =
+        mediaSession
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
@@ -136,7 +130,7 @@ class WavoraPlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
-        Log.d(TAG, "Service Destroyed")
+        Log.d(TAG, "Service destroyed")
         audioFocusManager.abandonAudioFocus()
         positionUpdateJob?.cancel()
         sleepTimerJob?.cancel()
@@ -146,16 +140,11 @@ class WavoraPlaybackService : MediaSessionService() {
         super.onDestroy()
     }
 
-    // ExoPlayer setup
+    // ── ExoPlayer setup ───────────────────────────────────────────────────────
+
     private fun buildExoPlayer() {
-        val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(
-                PlayerConstants.BUFFER_MIN_MS_DEFAULT,
-                PlayerConstants.BUFFER_MAX_MS_DEFAULT,
-                PlayerConstants.BUFFER_FOR_PLAYBACK_MS,
-                PlayerConstants.BUFFER_FOR_REBUFFER_MS
-            )
-            .build()
+        // Buffer sizes are selected dynamically based on charging/battery-saver state.
+        val loadControl = batteryAwareBufferConfig.build()
 
         player = ExoPlayer.Builder(this)
             .setAudioAttributes(
@@ -165,19 +154,20 @@ class WavoraPlaybackService : MediaSessionService() {
                     .build(),
                 /* handleAudioFocus = */ false,   // We manage focus manually via AudioFocusManager
             )
-            .setHandleAudioBecomingNoisy(false) // We handle BECOME_NOISY manually
+            .setHandleAudioBecomingNoisy(false)  // We handle BECOME_NOISY manually
             .setLoadControl(loadControl)
             .build()
 
         player.addListener(playerListener)
     }
 
-    // MediaSession Setup
+    // ── MediaSession setup ────────────────────────────────────────────────────
+
     private fun buildMediaSession() {
         val sessionActivityIntent = PendingIntent.getActivity(
             this, 0,
             Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
         mediaSession = MediaSession.Builder(this, player)
@@ -186,7 +176,7 @@ class WavoraPlaybackService : MediaSessionService() {
             .build()
     }
 
-    // AudioFocus setup
+    // ── AudioFocus setup ──────────────────────────────────────────────────────
 
     private fun buildAudioFocusManager() {
         audioFocusManager = AudioFocusManager(
@@ -203,8 +193,9 @@ class WavoraPlaybackService : MediaSessionService() {
                 override fun onAudioFocusLost(permanent: Boolean) {
                     val wasPlaying = player.isPlaying
                     player.pause()
-                    if (!permanent)
+                    if (!permanent) {
                         playerStateFlow.update { it.copy(wasPlayingBeforeFocusLoss = wasPlaying) }
+                    }
                 }
 
                 override fun onDuck() {
@@ -214,11 +205,16 @@ class WavoraPlaybackService : MediaSessionService() {
                 override fun onUnDuck() {
                     player.volume = 1f
                 }
-            }
+            },
         )
     }
 
-    // Queue / Song loading
+    // ── Queue / song loading ──────────────────────────────────────────────────
+
+    /**
+     * Start playing a list of songs from [startIndex].
+     * Builds ExoPlayer MediaItem list and sets it on the player.
+     */
     fun playSongs(songs: List<Song>, startIndex: Int = 0) {
         if (songs.isEmpty()) return
 
@@ -240,22 +236,22 @@ class WavoraPlaybackService : MediaSessionService() {
     fun playSong(song: Song) = playSongs(listOf(song), 0)
 
     fun skipToNext() {
-        if (player.hasNextMediaItem())
+        if (player.hasNextMediaItem()) {
             player.seekToNextMediaItem()
-        else {
+        } else {
             val next = queueManager.skipToNext()
-            next?.let { seekToQueueIndex(queueManager.currentIndex.value) }
+            if (next != null) seekToQueueIndex(queueManager.currentIndex.value)
         }
     }
 
     fun skipToPrevious(currentPositionMs: Long) {
-        if (currentPositionMs > PlayerConstants.RESTART_THRESHOLD_MS)
+        if (currentPositionMs > PlayerConstants.RESTART_THRESHOLD_MS) {
             player.seekTo(0L)
-        else if (player.hasPreviousMediaItem())
+        } else if (player.hasPreviousMediaItem()) {
             player.seekToPreviousMediaItem()
-        else {
+        } else {
             val prev = queueManager.skipToPrevious()
-            prev?.let { seekToQueueIndex(queueManager.currentIndex.value) }
+            if (prev != null) seekToQueueIndex(queueManager.currentIndex.value)
         }
     }
 
@@ -298,17 +294,18 @@ class WavoraPlaybackService : MediaSessionService() {
         queueManager.setRepeatMode(mode)
         player.repeatMode = when (mode) {
             RepeatMode.NONE -> REPEAT_MODE_OFF
-            RepeatMode.ALL -> REPEAT_MODE_ALL
             RepeatMode.ONE -> REPEAT_MODE_ONE
+            RepeatMode.ALL -> REPEAT_MODE_ALL
         }
     }
 
-    fun setShuffleEnabled(enable: Boolean) {
-        queueManager.setShuffleEnabled(enable)
-        player.shuffleModeEnabled = enable
+    fun setShuffleEnabled(enabled: Boolean) {
+        queueManager.setShuffleEnabled(enabled)
+        player.shuffleModeEnabled = enabled
     }
 
-    // Sleep Timer
+    // ── Sleep timer ───────────────────────────────────────────────────────────
+
     fun setSleepTimer(durationMs: Long) {
         sleepTimerJob?.cancel()
         if (durationMs <= 0) {
@@ -316,9 +313,7 @@ class WavoraPlaybackService : MediaSessionService() {
             return
         }
         val endsAt = System.currentTimeMillis() + durationMs
-        playerStateFlow.update {
-            it.copy(sleepTimerEndsAtMs = endsAt)
-        }
+        playerStateFlow.update { it.copy(sleepTimerEndsAtMs = endsAt) }
         sleepTimerJob = serviceScope.launch {
             delay(durationMs)
             pause()
@@ -326,17 +321,16 @@ class WavoraPlaybackService : MediaSessionService() {
         }
     }
 
-    // ExoPlayer Listener
+    // ── ExoPlayer listener ────────────────────────────────────────────────────
+
     private val playerListener = object : Player.Listener {
+
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             updatePlayerState()
             if (isPlaying) startPositionUpdates() else stopPositionUpdates()
         }
 
-        override fun onMediaItemTransition(
-            mediaItem: MediaItem?,
-            reason: Int,
-        ) {
+        override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
             val newIndex = player.currentMediaItemIndex
             queueManager.setCurrentIndex(newIndex)
             updatePlayerState()
@@ -344,8 +338,7 @@ class WavoraPlaybackService : MediaSessionService() {
             // Record play history
             val song = queueManager.currentSong ?: return
             serviceScope.launch(Dispatchers.IO) {
-                // TODO: Implement recordPlay(id: Long) function inside MusicRepository class
-                // musicRepository.recordPlay(song.id)
+                musicRepository.recordPlay(song.id, durationPlayedMs = song.duration)
             }
         }
 
@@ -369,7 +362,8 @@ class WavoraPlaybackService : MediaSessionService() {
         }
     }
 
-    // MediaSession callbacks
+    // ── MediaSession callback ─────────────────────────────────────────────────
+
     private val mediaSessionCallback = object : MediaSession.Callback {
         // Media3 MediaSession.Callback routes commands from MediaController
         // (Bluetooth, Android Auto, lock screen) through to the player.
@@ -377,7 +371,8 @@ class WavoraPlaybackService : MediaSessionService() {
         // only what requires custom logic.
     }
 
-    // state updates
+    // ── State update ──────────────────────────────────────────────────────────
+
     private fun updatePlayerState() {
         val song = queueManager.currentSong
         val sleepEnds = playerStateFlow.value.sleepTimerEndsAtMs
@@ -400,7 +395,8 @@ class WavoraPlaybackService : MediaSessionService() {
         }
     }
 
-    // position update loop
+    // ── Position update loop ──────────────────────────────────────────────────
+
     private fun startPositionUpdates() {
         positionUpdateJob?.cancel()
         positionUpdateJob = serviceScope.launch {
@@ -422,14 +418,16 @@ class WavoraPlaybackService : MediaSessionService() {
         positionUpdateJob = null
     }
 
-    // Queue Observation
+    // ── Queue observation ─────────────────────────────────────────────────────
+
     private fun observeQueueManager() {
         serviceScope.launch {
             queueManager.queue.collect { updatePlayerState() }
         }
     }
 
-    // Queue Persistence
+    // ── Queue persistence ─────────────────────────────────────────────────────
+
     private fun persistQueueAsync() {
         serviceScope.launch(Dispatchers.IO) {
             val songs = queueManager.queue.value
@@ -454,19 +452,19 @@ class WavoraPlaybackService : MediaSessionService() {
             val rawQueue = queueDao.getRawQueue()
             if (rawQueue.isEmpty()) return@launch
 
-            val currentPosition = rawQueue.indexOfFirst { it.isCurrent }.coerceAtLeast(0)
+            val currentPos = rawQueue.indexOfFirst { it.isCurrent }.coerceAtLeast(0)
             // We'd need the full Song objects — for now, the queue is rebuilt
             // when the user taps play. Full restoration with song metadata
             // requires loading from songDao (done in Phase 5 with session resumption).
             Log.d(
                 TAG,
-                "Queue has ${rawQueue.size} items, " +
-                        "current=$currentPosition (restoration deferred to Phase 5)"
+                "Queue has ${rawQueue.size} items, current=$currentPos (restoration deferred to Phase 5)"
             )
         }
     }
 
-    // Intent Handling
+    // ── Intent handling ───────────────────────────────────────────────────────
+
     private fun handleIntentAction(action: String?, intent: Intent?) {
         when (action) {
             PlayerConstants.SERVICE_ACTION_PLAY -> resume()
@@ -474,7 +472,6 @@ class WavoraPlaybackService : MediaSessionService() {
             PlayerConstants.SERVICE_ACTION_SKIP_NEXT -> skipToNext()
             PlayerConstants.SERVICE_ACTION_SKIP_PREV -> skipToPrevious(player.currentPosition)
             PlayerConstants.SERVICE_ACTION_STOP -> stop()
-
             "com.wavora.app.SET_SLEEP_TIMER" -> {
                 val ms = intent?.getLongExtra("duration_ms", 0L) ?: 0L
                 setSleepTimer(ms)
@@ -484,23 +481,28 @@ class WavoraPlaybackService : MediaSessionService() {
         }
     }
 
-    // Helpers
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
     private fun seekToQueueIndex(index: Int) {
         player.seekTo(index, 0L)
     }
 
     private fun Song.toMediaItem(): MediaItem =
         MediaItem.Builder()
-            .setUri(Uri.parse(contentUri))
+            .setUri(contentUri.toUri())
             .setMediaId(id.toString())
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(title)
                     .setArtist(artistName)
                     .setAlbumTitle(albumName)
-                    .setArtworkUri(albumArtUri?.let { Uri.parse(it) })
+                    .setArtworkUri(albumArtUri?.toUri())
                     .setTrackNumber(trackNumber)
                     .build()
-            ).build()
-}
+            )
+            .build()
 
+    companion object {
+        private const val TAG = "WavoraPlaybackService"
+    }
+}
