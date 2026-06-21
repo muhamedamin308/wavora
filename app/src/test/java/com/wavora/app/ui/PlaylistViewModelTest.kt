@@ -74,7 +74,7 @@ class PlaylistViewModelTest {
         playerRepository = playerRepo,
     )
 
-    // ── Loading state ─────────────────────────────────────────────────────────
+    // ── Loading state ────────────────────────────────────────────────────────[...]
 
     @Test
     fun `loads playlist and songs on init`() = runTest {
@@ -98,7 +98,7 @@ class PlaylistViewModelTest {
         assertTrue(viewModel.uiState.value.playlist is AsyncResult.Error)
     }
 
-    // ── Playback ──────────────────────────────────────────────────────────────
+    // ── Playback ─────────────────────────────────────────────────────────–[...]
 
     @Test
     fun `onPlayAll plays all songs from index 0`() = runTest {
@@ -108,8 +108,9 @@ class PlaylistViewModelTest {
         advanceUntilIdle()
 
         viewModel.onPlayAll()
-        advanceUntilIdle()
+        advanceUntilIdle()  // Wait for coroutine to complete
 
+        assertNotNull("playAll should have been called", playerRepo.lastPlayAllSongs)
         assertEquals(0, playerRepo.lastPlayAllStartIndex)
         assertEquals(2, playerRepo.lastPlayAllSongs?.size)
     }
@@ -135,12 +136,13 @@ class PlaylistViewModelTest {
         advanceUntilIdle()
 
         viewModel.onSongClicked(2)
-        advanceUntilIdle()
+        advanceUntilIdle()  // Wait for coroutine to complete
 
+        assertNotNull("playAll should have been called", playerRepo.lastPlayAllSongs)
         assertEquals(2, playerRepo.lastPlayAllStartIndex)
     }
 
-    // ── Song removal ──────────────────────────────────────────────────────────
+    // ── Song removal ────────────────────────────────────────────────────────[...]
 
     @Test
     fun `onRemoveSong calls repository and emits snackbar`() = runTest {
@@ -165,7 +167,7 @@ class PlaylistViewModelTest {
         job.cancel()
     }
 
-    // ── Rename ────────────────────────────────────────────────────────────────
+    // ── Rename ──────────────────────────────────────────────────────────[...]
 
     @Test
     fun `onRenameClicked shows rename dialog`() = runTest {
@@ -204,7 +206,7 @@ class PlaylistViewModelTest {
         assertNull(playlistRepo.lastRenamed)
     }
 
-    // ── Delete ────────────────────────────────────────────────────────────────
+    // ── Delete ──────────────────────────────────────────────────────────[...]
 
     @Test
     fun `onDeleteConfirmed deletes playlist and navigates up`() = runTest {
@@ -220,7 +222,7 @@ class PlaylistViewModelTest {
         }
 
         viewModel.onDeleteConfirmed()
-        advanceUntilIdle()
+        advanceUntilIdle()  // Wait for coroutine to complete
 
         assertEquals(1L, playlistRepo.lastDeletedPlaylistId)
         assertTrue(navigatedUp)
@@ -240,7 +242,7 @@ class PlaylistViewModelTest {
         assertNull(playlistRepo.lastDeletedPlaylistId)
     }
 
-    // ── Live updates ──────────────────────────────────────────────────────────
+    // ── Live updates ────────────────────────────────────────────────────────[...]
 
     @Test
     fun `playlist name update reflects in UI`() = runTest {
@@ -256,9 +258,9 @@ class PlaylistViewModelTest {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 //  Fakes
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 
 class FakePlaylistRepository : PlaylistRepository {
     val playlists = MutableStateFlow<List<Playlist>>(emptyList())
